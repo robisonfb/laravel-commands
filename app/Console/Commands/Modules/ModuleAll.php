@@ -68,7 +68,7 @@ class ModuleAll extends Command
             ['Model', 'module:model', true],
             ['Migration', 'module:migration', true],
             ['Factory', 'module:factory', true],
-            ['Observer', 'module:observer', false],
+            ['Observer', 'module:observer', true],
             ['Policy', 'module:policy', true],
             ['Seeder', 'module:seeder', false],
             ['Controller', 'module:controller', false],
@@ -152,13 +152,13 @@ class ModuleAll extends Command
         $this->line('');
         $this->comment('🔔 Próximos passos:');
 
-        $this->table(['Tarefa', 'Comando'], [
-            ['Rotas API', "Route::apiResource('" . Str::plural(Str::lower($model)) . "', " . $model . "Controller::class);"],
-            ['Observador', $model . "::observe(" . $model . "Observer::class);"],
-            ['Política', $model . "::class => " . $model . "Policy::class,"],
-            ['Migração', 'php artisan migrate'],
-            ['Seeder', 'php artisan db:seed --class=' . $model . 'Seeder'],
-            ['Documentação API', 'php artisan l5-swagger:generate']
+        $this->table(['Tarefa', 'Comando / Instruções'], [
+            ['Rotas API', "Route::apiResource('" . Str::plural(Str::lower($model)) . "', " . $model . "Controller::class);\n● Adicione no arquivo routes/api.php"],
+            ['Observador', $model . "::observe(" . $model . "Observer::class);\n● Adicione no método boot() do AppServiceProvider ou em outro ServiceProvider apropriado"],
+            ['Política', $model . "::class => " . $model . "Policy::class,\n● Adicione no array \$policies do AuthServiceProvider"],
+            ['Migração', "php artisan migrate\n● Execute para criar a tabela no banco de dados"],
+            ['Seeder', "php artisan db:seed --class=" . $model . "Seeder\n● Execute para popular a tabela com dados iniciais"],
+            ['Documentação API', "php artisan l5-swagger:generate\n● Execute para gerar/atualizar a documentação da API"]
         ]);
 
         $this->line('');
