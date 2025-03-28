@@ -13,7 +13,8 @@ class ModuleSeeder extends GeneratorCommand
      * @var string
      */
     protected $signature = 'module:seeder
-                            {name : Nome do modelo para o qual o controlador será gerado com base no template}
+                            {name : Nome do modelo para o qual o seeder será gerado com base no template}
+                            {--force : Sobrescrever arquivos existentes}
                             ';
 
     /**
@@ -37,22 +38,47 @@ class ModuleSeeder extends GeneratorCommand
      */
     public function handle()
     {
+        // Verifica se o arquivo já existe
         if ($this->alreadyExists($this->getNameInput())) {
-            $this->error($this->type . 'já existe!');
-            return 1; // Código de erro
+            // Se a opção --force foi fornecida, sobrescreve o arquivo
+            if ($this->option('force')) {
+                $this->info('Sobrescrevendo Seeder existente...');
+                return parent::handle();
+            }
+
+            // Informa ao usuário que o arquivo já existe e que ele pode usar --force
+            $this->error($this->type . ' já existe! Use --force para sobrescrever.');
+
+            // Retorna código de erro específico para 'arquivo já existe'
+            return 3;
         }
 
-        return parent::handle();
+        // Se o arquivo não existe, continua normalmente
+        $result = parent::handle();
+
+        if ($result === 0) {
+            $this->info($this->type . ' criado com sucesso!');
+        }
+
+        return $result;
     }
 
     /**
      * Retorna o caminho para o arquivo stub do seeder
      *
-     * @return string
+     * @return string|boolean
      */
     protected function getStub()
     {
-        return app_path() . '/Console/Commands/Modules/Stubs/ModuleSeeder.stub';
+        $stubPath = app_path() . '/Console/Commands/Modules/Stubs/ModuleSeeder.stub';
+
+        // Verifica se o arquivo stub existe
+        if (!file_exists($stubPath)) {
+            $this->error('Arquivo stub não encontrado em: ' . $stubPath);
+            return false;
+        }
+
+        return $stubPath;
     }
 
     /**
@@ -112,11 +138,14 @@ class ModuleSeeder extends GeneratorCommand
      */
     protected function buildClass($name)
     {
-        $stub = parent::buildClass($name);
-
-        $this->replaceModel($stub);
-
-        return $stub;
+        try {
+            $stub = parent::buildClass($name);
+            $this->replaceModel($stub);
+            return $stub;
+        } catch (\Exception $e) {
+            $this->error('Erro ao construir a classe: ' . $e->getMessage());
+            return '';
+        }
     }
 
     /**

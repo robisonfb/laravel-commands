@@ -14,6 +14,7 @@ class ModuleController extends GeneratorCommand
      */
     protected $signature = 'module:controller
                         {name : Nome do modelo para o qual o controlador será gerado com base no template}
+                        {--force : Sobrescrever arquivos existentes}
                         ';
 
     /**
@@ -21,7 +22,7 @@ class ModuleController extends GeneratorCommand
      *
      * @var string
      */
-    protected $description = 'Gera um controlador para A Model especificado';
+    protected $description = 'Gera um controlador para a Model especificada';
 
     /**
      * O tipo de classe que está sendo gerada.
@@ -33,26 +34,51 @@ class ModuleController extends GeneratorCommand
     /**
      * Executa o comando para gerar o controlador
      *
-     * @return void
+     * @return int
      */
     public function handle()
     {
+        // Verifica se o arquivo já existe
         if ($this->alreadyExists($this->getNameInput())) {
-            $this->error($this->type . 'já existe!');
-            return 1; // Código de erro
+            // Se a opção --force foi fornecida, sobrescreve o arquivo
+            if ($this->option('force')) {
+                $this->info('Sobrescrevendo Controller existente...');
+                return parent::handle();
+            }
+
+            // Informa ao usuário que o arquivo já existe e que ele pode usar --force
+            $this->error($this->type . ' já existe! Use --force para sobrescrever.');
+
+            // Retorna código de erro específico para 'arquivo já existe'
+            return 3;
         }
 
-        return parent::handle();
+        // Se o arquivo não existe, continua normalmente
+        $result = parent::handle();
+
+        if ($result === 0) {
+            $this->info($this->type . ' criado com sucesso!');
+        }
+
+        return $result;
     }
 
     /**
      * Retorna o caminho para o arquivo stub do controlador
      *
-     * @return string
+     * @return string|boolean
      */
     protected function getStub()
     {
-        return app_path() . '/Console/Commands/Modules/Stubs/ModuleController.stub';
+        $stubPath = app_path() . '/Console/Commands/Modules/Stubs/ModuleController.stub';
+
+        // Verifica se o arquivo stub existe
+        if (!file_exists($stubPath)) {
+            $this->error('Arquivo stub não encontrado em: ' . $stubPath);
+            return false;
+        }
+
+        return $stubPath;
     }
 
     /**
@@ -106,11 +132,14 @@ class ModuleController extends GeneratorCommand
      */
     protected function buildClass($name)
     {
-        $stub = parent::buildClass($name);
-
-        $this->replaceModel($stub);
-
-        return $stub;
+        try {
+            $stub = parent::buildClass($name);
+            $this->replaceModel($stub);
+            return $stub;
+        } catch (\Exception $e) {
+            $this->error('Erro ao construir a classe: ' . $e->getMessage());
+            return '';
+        }
     }
 
     /**
@@ -124,6 +153,11 @@ class ModuleController extends GeneratorCommand
     protected function replaceModel(&$stub)
     {
         $modelName = $this->getNameInput();
+
+        // Remove 'Controller' do final se estiver presente
+        if (Str::endsWith($modelName, 'Controller')) {
+            $modelName = Str::replaceLast('Controller', '', $modelName);
+        }
 
         // Substitui o nome do modelo
         $stub = str_replace('{modelName}', $modelName, $stub);

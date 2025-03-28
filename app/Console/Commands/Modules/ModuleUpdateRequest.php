@@ -13,7 +13,8 @@ class ModuleUpdateRequest extends GeneratorCommand
      * @var string
      */
     protected $signature = 'module:update-request
-                            {name : Nome do modelo para o qual o controlador será gerado com base no template}
+                            {name : Nome do modelo para o qual o update request será gerado com base no template}
+                            {--force : Sobrescrever arquivos existentes}
                             ';
 
     /**
@@ -37,22 +38,47 @@ class ModuleUpdateRequest extends GeneratorCommand
      */
     public function handle()
     {
+        // Verifica se o arquivo já existe
         if ($this->alreadyExists($this->getNameInput())) {
-            $this->error($this->type . 'já existe!');
-            return 1; // Código de erro
+            // Se a opção --force foi fornecida, sobrescreve o arquivo
+            if ($this->option('force')) {
+                $this->info('Sobrescrevendo Update Request existente...');
+                return parent::handle();
+            }
+
+            // Informa ao usuário que o arquivo já existe e que ele pode usar --force
+            $this->error($this->type . ' já existe! Use --force para sobrescrever.');
+
+            // Retorna código de erro específico para 'arquivo já existe'
+            return 3;
         }
 
-        return parent::handle();
+        // Se o arquivo não existe, continua normalmente
+        $result = parent::handle();
+
+        if ($result === 0) {
+            $this->info($this->type . ' criado com sucesso!');
+        }
+
+        return $result;
     }
 
     /**
      * Retorna o caminho para o arquivo stub do request
      *
-     * @return string
+     * @return string|boolean
      */
     protected function getStub()
     {
-        return app_path() . '/Console/Commands/Modules/Stubs/ModuleUpdateRequest.stub';
+        $stubPath = app_path() . '/Console/Commands/Modules/Stubs/ModuleUpdateRequest.stub';
+
+        // Verifica se o arquivo stub existe
+        if (!file_exists($stubPath)) {
+            $this->error('Arquivo stub não encontrado em: ' . $stubPath);
+            return false;
+        }
+
+        return $stubPath;
     }
 
     /**
@@ -99,11 +125,14 @@ class ModuleUpdateRequest extends GeneratorCommand
      */
     protected function buildClass($name)
     {
-        $stub = parent::buildClass($name);
-
-        $this->replaceModel($stub);
-
-        return $stub;
+        try {
+            $stub = parent::buildClass($name);
+            $this->replaceModel($stub);
+            return $stub;
+        } catch (\Exception $e) {
+            $this->error('Erro ao construir a classe: ' . $e->getMessage());
+            return '';
+        }
     }
 
     /**

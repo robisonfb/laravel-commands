@@ -11,9 +11,14 @@ class ModuleAll extends Command
 {
     protected $signature = 'module:all
                             {--m|model= : O nome do modelo.}
+                            {--f|force : Sobrescrever arquivos existentes}
+                            {--continue : Continuar mesmo se ocorrerem erros não críticos}
                             ';
 
     protected $description = 'Cria todos os arquivos do módulo incluindo model, controller, requests, tests, etc.';
+
+    // Códigos de erro específicos
+    const ERROR_ALREADY_EXISTS = 3;
 
     public function __construct()
     {
@@ -54,6 +59,10 @@ class ModuleAll extends Command
             $model = $modelInput;
         }
 
+        // Opções adicionais para os comandos
+        $forceOption = $this->option('force') ? ' --force' : '';
+        $continueOnError = $this->option('continue');
+
         // Array de componentes a serem criados
         $components = [
             ['Model', 'module:model', true],
@@ -72,25 +81,46 @@ class ModuleAll extends Command
 
         $this->line('🔨 Criando componentes do módulo ' . $model . '...');
 
-
         $failedComponents = [];
+        $skippedComponents = [];
 
         // Criar cada componente
         foreach ($components as $component) {
             $this->line('');
             $this->comment("Criando {$component[0]}...");
 
-            $command = $component[1] . ' ' . $model;
+            $command = $component[1] . ' ' . $model . $forceOption;
+            $this->line("Executando: $command");
+
             $runCommand = Artisan::call($command);
 
-
+            // Verificar código de retorno
             if ($runCommand !== 0) {
-                $failedComponents[] = $component[0];
-                $this->error("❌ Falha ao criar {$component[0]}");
+                // Obter a saída do comando para verificar o erro específico
+                $output = Artisan::output();
 
-                if ($component[2]) {  // Se for um componente crítico
-                    $this->error("❌ Erro crítico na criação do módulo.");
-                    return 1;
+                // Se o arquivo já existe e não estamos forçando a sobrescrita
+                if ($runCommand === self::ERROR_ALREADY_EXISTS && !$this->option('force')) {
+                    $skippedComponents[] = $component[0];
+                    $this->warn("⚠️ {$component[0]} já existe e foi ignorado. Use --force para sobrescrever.");
+
+                    // Se for um componente crítico e não estamos continuando em erros
+                    if ($component[2] && !$continueOnError) {
+                        $this->error("❌ Um componente crítico já existe e não foi sobrescrito.");
+                        $this->info("👉 Use --force para sobrescrever ou --continue para ignorar erros não críticos.");
+                        return 1;
+                    }
+                } else {
+                    $failedComponents[] = $component[0];
+                    $this->error("❌ Falha ao criar {$component[0]}");
+                    $this->line("Saída do comando: " . trim($output));
+
+                    // Se for um componente crítico
+                    if ($component[2] && !$continueOnError) {
+                        $this->error("❌ Erro crítico na criação do módulo.");
+                        $this->info("👉 Use --continue para ignorar erros não críticos e prosseguir.");
+                        return 1;
+                    }
                 }
             } else {
                 $this->info("✅ {$component[0]} criado com sucesso!");
@@ -101,10 +131,18 @@ class ModuleAll extends Command
 
         // Checagem final
         if (!empty($failedComponents)) {
-            $this->warn('⚠️ Alguns componentes não foram criados:');
+            $this->warn('⚠️ Alguns componentes não foram criados devido a erros:');
             foreach ($failedComponents as $failed) {
                 $this->comment('- ' . $failed);
             }
+        }
+
+        if (!empty($skippedComponents)) {
+            $this->warn('⚠️ Alguns componentes já existiam e foram ignorados:');
+            foreach ($skippedComponents as $skipped) {
+                $this->comment('- ' . $skipped);
+            }
+            $this->line("👉 Use --force para sobrescrever arquivos existentes.");
         }
 
         $this->line('');

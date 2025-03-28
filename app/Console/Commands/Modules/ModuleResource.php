@@ -13,7 +13,8 @@ class ModuleResource extends GeneratorCommand
      * @var string
      */
     protected $signature = 'module:resource
-                            {name : Nome do modelo para o qual o controlador será gerado com base no template}
+                            {name : Nome do modelo para o qual o resource será gerado com base no template}
+                            {--force : Sobrescrever arquivos existentes}
                             ';
 
     /**
@@ -37,22 +38,47 @@ class ModuleResource extends GeneratorCommand
      */
     public function handle()
     {
+        // Verifica se o arquivo já existe
         if ($this->alreadyExists($this->getNameInput())) {
-            $this->error($this->type . 'já existe!');
-            return 1; // Código de erro
+            // Se a opção --force foi fornecida, sobrescreve o arquivo
+            if ($this->option('force')) {
+                $this->info('Sobrescrevendo Resource existente...');
+                return parent::handle();
+            }
+
+            // Informa ao usuário que o arquivo já existe e que ele pode usar --force
+            $this->error($this->type . ' já existe! Use --force para sobrescrever.');
+
+            // Retorna código de erro específico para 'arquivo já existe'
+            return 3;
         }
 
-        return parent::handle();
+        // Se o arquivo não existe, continua normalmente
+        $result = parent::handle();
+
+        if ($result === 0) {
+            $this->info($this->type . ' criado com sucesso!');
+        }
+
+        return $result;
     }
 
     /**
      * Retorna o caminho para o arquivo stub do resource
      *
-     * @return string
+     * @return string|boolean
      */
     protected function getStub()
     {
-        return app_path() . '/Console/Commands/Modules/Stubs/ModuleResource.stub';
+        $stubPath = app_path() . '/Console/Commands/Modules/Stubs/ModuleResource.stub';
+
+        // Verifica se o arquivo stub existe
+        if (!file_exists($stubPath)) {
+            $this->error('Arquivo stub não encontrado em: ' . $stubPath);
+            return false;
+        }
+
+        return $stubPath;
     }
 
     /**
@@ -104,11 +130,14 @@ class ModuleResource extends GeneratorCommand
      */
     protected function buildClass($name)
     {
-        $stub = parent::buildClass($name);
-
-        $this->replaceModel($stub);
-
-        return $stub;
+        try {
+            $stub = parent::buildClass($name);
+            $this->replaceModel($stub);
+            return $stub;
+        } catch (\Exception $e) {
+            $this->error('Erro ao construir a classe: ' . $e->getMessage());
+            return '';
+        }
     }
 
     /**
@@ -122,6 +151,11 @@ class ModuleResource extends GeneratorCommand
     protected function replaceModel(&$stub)
     {
         $modelName = $this->getNameInput();
+
+        // Remove 'Resource' do final se estiver presente
+        if (Str::endsWith($modelName, 'Resource')) {
+            $modelName = Str::replaceLast('Resource', '', $modelName);
+        }
 
         // Substitui o nome do modelo
         $stub = str_replace('{modelName}', $modelName, $stub);
