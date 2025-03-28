@@ -1,7 +1,6 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
+use Illuminate\Http\{Request, UploadedFile};
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -160,7 +159,7 @@ if (!function_exists('get_file_url')) {
     function get_file_url($paths, string $disk = 'public')
     {
         if (is_array($paths)) {
-            return array_map(function($path) use ($disk) {
+            return array_map(function ($path) use ($disk) {
                 return Storage::disk($disk)->url($path);
             }, $paths);
         } else {

@@ -43,6 +43,7 @@ class ModuleTest extends GeneratorCommand
             // Se a opção --force foi fornecida, sobrescreve o arquivo
             if ($this->option('force')) {
                 $this->info('Sobrescrevendo Teste existente...');
+
                 return parent::handle();
             }
 
@@ -75,6 +76,7 @@ class ModuleTest extends GeneratorCommand
         // Verifica se o arquivo stub existe
         if (!file_exists($stubPath)) {
             $this->error('Arquivo stub não encontrado em: ' . $stubPath);
+
             return false;
         }
 
@@ -130,9 +132,11 @@ class ModuleTest extends GeneratorCommand
         try {
             $stub = parent::buildClass($name);
             $this->replaceModel($stub);
+
             return $stub;
         } catch (\Exception $e) {
             $this->error('Erro ao construir a classe: ' . $e->getMessage());
+
             return '';
         }
     }

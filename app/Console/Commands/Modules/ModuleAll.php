@@ -3,10 +3,8 @@
 namespace App\Console\Commands\Modules;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Str;
-use Illuminate\Support\Pluralizer;
-use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\{Artisan, File};
+use Illuminate\Support\{Str};
 
 class ModuleAll extends Command
 {
@@ -19,7 +17,7 @@ class ModuleAll extends Command
     protected $description = 'Cria todos os arquivos do módulo incluindo model, controller, requests, tests, etc.';
 
     // Códigos de erro específicos
-    const ERROR_ALREADY_EXISTS = 3;
+    public const ERROR_ALREADY_EXISTS = 3;
 
     public function __construct()
     {
@@ -33,6 +31,7 @@ class ModuleAll extends Command
 
         if (!$modelInput = $this->option('model')) {
             $this->error('O parâmetro MODEL é obrigatório');
+
             return 1;
         }
 
@@ -51,6 +50,7 @@ class ModuleAll extends Command
 
             if (!$this->confirm('Deseja continuar usando o nome sugerido?', true)) {
                 $this->error('❌ Operação cancelada pelo usuário.');
+
                 return 1;
             }
 
@@ -61,9 +61,9 @@ class ModuleAll extends Command
         }
 
         // Opções adicionais para os comandos
-        $forceOption = $this->option('force') ? ' --force' : '';
+        $forceOption     = $this->option('force') ? ' --force' : '';
         $continueOnError = $this->option('continue');
-        $generateRoute = true;
+        $generateRoute   = true;
 
         // Array de componentes a serem criados
         $components = [
@@ -78,12 +78,12 @@ class ModuleAll extends Command
             ['Update Request', 'module:update-request', false],
             ['Resource', 'module:resource', false],
             ['Collection', 'module:collection', false],
-            ['Test', 'module:test', true]
+            ['Test', 'module:test', true],
         ];
 
         $this->line('🔨 Criando componentes do módulo ' . $model . '...');
 
-        $failedComponents = [];
+        $failedComponents  = [];
         $skippedComponents = [];
 
         // Criar cada componente
@@ -110,6 +110,7 @@ class ModuleAll extends Command
                     if ($component[2] && !$continueOnError) {
                         $this->error("❌ Um componente crítico já existe e não foi sobrescrito.");
                         $this->info("👉 Use --force para sobrescrever ou --continue para ignorar erros não críticos.");
+
                         return 1;
                     }
                 } else {
@@ -121,6 +122,7 @@ class ModuleAll extends Command
                     if ($component[2] && !$continueOnError) {
                         $this->error("❌ Erro crítico na criação do módulo.");
                         $this->info("👉 Use --continue para ignorar erros não críticos e prosseguir.");
+
                         return 1;
                     }
                 }
@@ -148,6 +150,7 @@ class ModuleAll extends Command
         // Checagem final
         if (!empty($failedComponents)) {
             $this->warn('⚠️ Alguns componentes não foram criados devido a erros:');
+
             foreach ($failedComponents as $failed) {
                 $this->comment('- ' . $failed);
             }
@@ -155,6 +158,7 @@ class ModuleAll extends Command
 
         if (!empty($skippedComponents)) {
             $this->warn('⚠️ Alguns componentes já existiam e foram ignorados:');
+
             foreach ($skippedComponents as $skipped) {
                 $this->comment('- ' . $skipped);
             }
@@ -176,7 +180,7 @@ class ModuleAll extends Command
             ['Política', $model . "::class => " . $model . "Policy::class,\n● Adicione no array \$policies do AuthServiceProvider\n-------------------------------------------"],
             ['Migração', "php artisan migrate\n● Execute para criar a tabela no banco de dados\n-------------------------------------------"],
             ['Seeder', "php artisan db:seed --class=" . $model . "Seeder\n● Execute para popular a tabela com dados iniciais\n-------------------------------------------"],
-            ['Documentação API', "php artisan l5-swagger:generate\n● Execute para gerar/atualizar a documentação da API"]
+            ['Documentação API', "php artisan l5-swagger:generate\n● Execute para gerar/atualizar a documentação da API"],
         ];
 
         $this->table(['Tarefa', 'Comando / Instruções'], $tableData);
@@ -207,7 +211,7 @@ class ModuleAll extends Command
 
         // Preparar o namespace do controller
         $controllerNamespace = "App\\Http\\Controllers\\{$model}Controller";
-        $controllerImport = "use {$controllerNamespace};";
+        $controllerImport    = "use {$controllerNamespace};";
 
         // Verificar se a importação já existe
         $importExists = Str::contains($contents, $controllerImport);
@@ -228,7 +232,7 @@ class ModuleAll extends Command
             preg_match_all('/^use .+;$/m', $contents, $useMatches);
 
             if (!empty($useMatches[0])) {
-                $lastUse = end($useMatches[0]);
+                $lastUse    = end($useMatches[0]);
                 $lastUsePos = strrpos($contents, $lastUse) + strlen($lastUse);
 
                 // Inserir após o último use
@@ -236,11 +240,13 @@ class ModuleAll extends Command
             } else {
                 // Se não encontrou nenhum use, procura pelo final do namespace
                 $namespaceEndPos = strpos($contents, ";");
+
                 if ($namespaceEndPos !== false) {
                     $contents = substr($contents, 0, $namespaceEndPos + 1) . "\n\n" . $controllerImport . substr($contents, $namespaceEndPos + 1);
                 } else {
                     // Se nem namespace tem, adiciona depois do <?php
                     $phpPos = strpos($contents, "<?php");
+
                     if ($phpPos !== false) {
                         $contents = substr($contents, 0, $phpPos + 5) . "\n\n" . $controllerImport . substr($contents, $phpPos + 5);
                     }
@@ -251,14 +257,14 @@ class ModuleAll extends Command
         // Encontrar o final do arquivo para adicionar a rota
         // Vamos procurar o último middleware()->name()->group() ou o último ponto e vírgula
         $middlewareGroupEndPos = strrpos($contents, "});");
-        $lastSemicolon = strrpos($contents, ";");
+        $lastSemicolon         = strrpos($contents, ";");
 
         // Determinar onde colocar a nova rota
         $insertPos = $middlewareGroupEndPos !== false ? $middlewareGroupEndPos + 2 : $lastSemicolon + 1;
 
         // Verificar se não estamos inserindo dentro de algum fechamento
         // Conta abertura e fechamento de chaves até o ponto de inserção
-        $openCount = substr_count(substr($contents, 0, $insertPos), "{");
+        $openCount  = substr_count(substr($contents, 0, $insertPos), "{");
         $closeCount = substr_count(substr($contents, 0, $insertPos), "}");
 
         // Se houver mais aberturas que fechamentos, estamos dentro de algum bloco
@@ -280,6 +286,7 @@ class ModuleAll extends Command
         // Salvar o arquivo
         try {
             File::put($apiRoutesPath, $newContents);
+
             return true;
         } catch (\Exception $e) {
             return "Erro ao salvar o arquivo: " . $e->getMessage();
@@ -294,40 +301,40 @@ class ModuleAll extends Command
      */
     protected function validateModelName($name)
     {
-        $issues = [];
+        $issues  = [];
         $isValid = true;
 
         // Verificar se começa com letra maiúscula
         if (!preg_match('/^[A-Z]/', $name)) {
             $issues[] = 'O nome do modelo deve começar com letra maiúscula';
-            $isValid = false;
+            $isValid  = false;
         }
 
         // Verificar se contém espaços ou caracteres especiais
         if (preg_match('/[^a-zA-Z0-9]/', $name)) {
             $issues[] = 'O nome do modelo não deve conter espaços ou caracteres especiais';
-            $isValid = false;
+            $isValid  = false;
         }
 
         // Verificar se está no plural
         if (Str::plural($name) === $name && Str::singular($name) !== $name) {
             $issues[] = 'O nome do modelo deve estar no singular';
-            $isValid = false;
+            $isValid  = false;
         }
 
         // Verificar se segue o padrão StudlyCase
         if ($name !== Str::studly($name)) {
             $issues[] = 'O nome do modelo deve seguir o padrão StudlyCase';
-            $isValid = false;
+            $isValid  = false;
         }
 
         // Criar sugestão de nome correto
         $suggestion = Str::studly(Str::singular($name));
 
         return [
-            'isValid' => $isValid,
-            'issues' => $issues,
-            'suggestion' => $suggestion
+            'isValid'    => $isValid,
+            'issues'     => $issues,
+            'suggestion' => $suggestion,
         ];
     }
 }

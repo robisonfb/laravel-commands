@@ -51,6 +51,7 @@ class ModuleMigration extends GeneratorCommand
         // Verifica se já existe uma migração para esta tabela
         if ($this->migrationExists($tableName) && !$this->option('force')) {
             $this->error($this->type . ' para tabela ' . $tableName . ' já existe! Use --force para sobrescrever.');
+
             return 3; // Código de erro específico para arquivo existente
         }
 
@@ -63,6 +64,7 @@ class ModuleMigration extends GeneratorCommand
 
             if (empty($content)) {
                 $this->error('Não foi possível gerar o conteúdo da migração.');
+
                 return 1;
             }
 
@@ -73,6 +75,7 @@ class ModuleMigration extends GeneratorCommand
             return 0; // Código de sucesso
         } catch (\Exception $e) {
             $this->error('Erro ao criar a migração: ' . $e->getMessage());
+
             return 1;
         }
     }
@@ -86,7 +89,7 @@ class ModuleMigration extends GeneratorCommand
     protected function migrationExists($tableName)
     {
         $migrationPath = $this->laravel->databasePath() . '/migrations/';
-        $files = glob($migrationPath . '*_create_' . $tableName . '_table.php');
+        $files         = glob($migrationPath . '*_create_' . $tableName . '_table.php');
 
         return !empty($files);
     }
@@ -103,6 +106,7 @@ class ModuleMigration extends GeneratorCommand
         // Verifica se o arquivo stub existe
         if (!file_exists($stubPath)) {
             $this->error('Arquivo stub não encontrado em: ' . $stubPath);
+
             return false;
         }
 
@@ -129,6 +133,7 @@ class ModuleMigration extends GeneratorCommand
     protected function getPath($name)
     {
         $path = $this->laravel->databasePath() . '/migrations/' . $name . '.php';
+
         return $path;
     }
 
@@ -153,6 +158,7 @@ class ModuleMigration extends GeneratorCommand
             return $stub;
         } catch (\Exception $e) {
             $this->error('Erro ao construir a classe: ' . $e->getMessage());
+
             return '';
         }
     }
@@ -174,7 +180,7 @@ class ModuleMigration extends GeneratorCommand
 
         // Substitui o nome da tabela (plural e snake_case)
         $tableName = Str::plural(Str::snake($modelName));
-        $stub = str_replace('{tableName}', $tableName, $stub);
+        $stub      = str_replace('{tableName}', $tableName, $stub);
 
         // Substitui o nome plural do modelo em minúsculas
         $stub = str_replace('{modelNamePluralLowerCase}', Str::plural(Str::lower($modelName)), $stub);

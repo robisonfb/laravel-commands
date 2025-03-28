@@ -43,6 +43,7 @@ class ModuleModel extends GeneratorCommand
             // Se a opção --force foi fornecida, sobrescreve o arquivo
             if ($this->option('force')) {
                 $this->info('Sobrescrevendo Model existente...');
+
                 return parent::handle();
             }
 
@@ -75,6 +76,7 @@ class ModuleModel extends GeneratorCommand
         // Verifica se o arquivo stub existe
         if (!file_exists($stubPath)) {
             $this->error('Arquivo stub não encontrado em: ' . $stubPath);
+
             return false;
         }
 
@@ -128,9 +130,11 @@ class ModuleModel extends GeneratorCommand
         try {
             $stub = parent::buildClass($name);
             $this->replaceModel($stub);
+
             return $stub;
         } catch (\Exception $e) {
             $this->error('Erro ao construir a classe: ' . $e->getMessage());
+
             return '';
         }
     }
@@ -158,7 +162,7 @@ class ModuleModel extends GeneratorCommand
 
         // Substitui o nome da tabela (plural e snake_case)
         $tableName = Str::plural(Str::snake($modelName));
-        $stub = str_replace('{tableName}', $tableName, $stub);
+        $stub      = str_replace('{tableName}', $tableName, $stub);
 
         return $this;
     }

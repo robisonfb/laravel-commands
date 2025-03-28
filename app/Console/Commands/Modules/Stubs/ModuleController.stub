@@ -2,21 +2,19 @@
 
 namespace DummyNamespace;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\{modelName}StoreRequest;
-use App\Http\Requests\Update{modelName}Request;
-use App\Http\Resources\{modelName}Resource;
-use App\Http\Resources\{modelName}Collection;
+use App\Http\Requests\{Store{modelName}Request, Update{modelName}Request};
+use App\Http\Resources\{{modelName}Collection, {modelName}Resource};
 use App\Models\{modelName};
-use App\Repositories\{modelName}Repository;
+
+use App\Http\Controllers\Controller;
+
+
+
+
+use App\Models\Blog;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Http\{JsonResponse, Request, Response};
+use Illuminate\Support\Facades\{Cache, DB, Log, Schema};
 
 class DummyClass extends Controller
 {
