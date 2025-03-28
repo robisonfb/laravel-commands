@@ -116,14 +116,14 @@ class ModuleAll extends Command
             return 1;
         }
 
-        // // Criar o Resource
-        // $this->info('Criando Resource...');
-        // $resourceCommand = 'module:resource ' . $model;
-        // $runResource = Artisan::call($resourceCommand);
-        // if ($runResource !== 0) {
-        //     $this->error('Falha ao criar o Resource');
-        //     return 1;
-        // }
+        // Criar o Resource
+        $this->info('Criando Resource...');
+        $resourceCommand = 'module:resource ' . $model;
+        $runResource = Artisan::call($resourceCommand);
+        if ($runResource !== 0) {
+            $this->error('Falha ao criar o Resource');
+            return 1;
+        }
 
         // // Criar a Collection
         // $this->info('Criando Collection...');
