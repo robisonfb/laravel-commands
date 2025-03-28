@@ -1,10 +1,4 @@
 <?php
-/**
- * Classe para geração automática de requests de store para módulos
- *
- * Esta classe estende o GeneratorCommand do Laravel para criar
- * requests personalizados a partir de stubs definidos.
- */
 
 namespace App\Console\Commands\Modules;
 
@@ -19,7 +13,7 @@ class ModuleStoreRequest extends GeneratorCommand
      * @var string
      */
     protected $signature = 'module:store-request
-                            {name : The name of the model.}
+                            {name: Nome do modelo para o qual o controlador será gerado com base no template}
                             ';
 
     /**
@@ -44,7 +38,7 @@ class ModuleStoreRequest extends GeneratorCommand
     public function handle()
     {
         if ($this->alreadyExists($this->getNameInput())) {
-            $this->error($this->type . ' already exists!');
+            $this->error($this->type . 'já existe!');
             return 1; // Código de erro
         }
 

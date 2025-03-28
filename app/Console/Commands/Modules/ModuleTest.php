@@ -7,16 +7,33 @@ use Illuminate\Support\Str;
 
 class ModuleTest extends GeneratorCommand
 {
+    /**
+     * Define a assinatura do comando no Artisan
+     *
+     * @var string
+     */
     protected $signature = 'module:test
-                            {name : The name of the model.}
+                            {name : O nome do módulo.}
                             ';
 
-    protected $description = 'Command description';
+    /**
+     * Descrição do propósito do comando
+     *
+     * @var string
+     */
+    protected $description = 'Gera um teste para o módulo especificado';
+
+    /**
+     * O tipo de classe que está sendo gerada.
+     *
+     * @var string
+     */
+    protected $type = 'Policy';
 
     public function handle()
     {
         if ($this->alreadyExists($this->getNameInput())) {
-            $this->error($this->type . ' already exists!');
+            $this->error($this->type . 'já existe!');
             return 1; // Código de erro
         }
 

@@ -1,10 +1,4 @@
 <?php
-/**
- * Classe para geração automática de collections de recursos de módulos
- *
- * Esta classe estende o GeneratorCommand do Laravel para criar
- * resource collections personalizadas a partir de stubs definidos.
- */
 
 namespace App\Console\Commands\Modules;
 
@@ -19,7 +13,7 @@ class ModuleCollection extends GeneratorCommand
      * @var string
      */
     protected $signature = 'module:collection
-                            {name : The name of the model.}
+                            {name: Nome do modelo para o qual o controlador será gerado com base no template}
                             ';
 
     /**
@@ -30,6 +24,13 @@ class ModuleCollection extends GeneratorCommand
     protected $description = 'Gera uma resource collection para o módulo especificado';
 
     /**
+     * O tipo de classe que está sendo gerada.
+     *
+     * @var string
+     */
+    protected $type = 'Collection';
+
+    /**
      * Executa o comando para gerar a collection
      *
      * @return int
@@ -37,7 +38,7 @@ class ModuleCollection extends GeneratorCommand
     public function handle()
     {
         if ($this->alreadyExists($this->getNameInput())) {
-            $this->error($this->type . ' already exists!');
+            $this->error($this->type . 'já existe!');
             return 1; // Código de erro
         }
 

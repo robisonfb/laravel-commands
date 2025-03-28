@@ -1,10 +1,4 @@
 <?php
-/**
- * Classe para geração automática de observers de módulos
- *
- * Esta classe estende o GeneratorCommand do Laravel para criar
- * observers personalizados a partir de stubs definidos.
- */
 
 namespace App\Console\Commands\Modules;
 
@@ -44,7 +38,7 @@ class ModuleObserver extends GeneratorCommand
     public function handle()
     {
         if ($this->alreadyExists($this->getNameInput())) {
-            $this->error($this->type . ' already exists!');
+            $this->error($this->type . 'já existe!');
             return 1; // Código de erro
         }
 

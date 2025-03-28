@@ -1,10 +1,4 @@
 <?php
-/**
- * Classe para geração automática de modelos
- *
- * Esta classe estende o GeneratorCommand do Laravel para criar
- * modelos personalizados a partir de stubs definidos.
- */
 
 namespace App\Console\Commands\Modules;
 
@@ -30,6 +24,13 @@ class ModuleModel extends GeneratorCommand
     protected $description = 'Gera um modelo para o módulo especificado';
 
     /**
+     * O tipo de classe que está sendo gerada.
+     *
+     * @var string
+     */
+    protected $type = 'Model';
+
+    /**
      * Executa o comando para gerar o modelo
      *
      * @return void
@@ -37,7 +38,7 @@ class ModuleModel extends GeneratorCommand
     public function handle()
     {
         if ($this->alreadyExists($this->getNameInput())) {
-            $this->error($this->type . ' already exists!');
+            $this->error($this->type . 'já existe!');
             return 1; // Código de erro
         }
 

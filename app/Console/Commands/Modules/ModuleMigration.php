@@ -1,10 +1,4 @@
 <?php
-/**
- * Classe para geração automática de migrações de módulos
- *
- * Esta classe estende o GeneratorCommand do Laravel para criar
- * migrações personalizadas a partir de stubs definidos.
- */
 
 namespace App\Console\Commands\Modules;
 
@@ -19,7 +13,7 @@ class ModuleMigration extends GeneratorCommand
      * @var string
      */
     protected $signature = 'module:migration
-                            {name : The name of the model.}
+                            {name: Nome do modelo para o qual o controlador será gerado com base no template}
                             ';
 
     /**
@@ -55,7 +49,7 @@ class ModuleMigration extends GeneratorCommand
 
         // Verifica se o arquivo já existe
         if ($this->alreadyExists($this->getNameInput())) {
-            $this->error($this->type . ' already exists!');
+            $this->error($this->type . 'já existe!');
             return 1; // Código de erro
         }
 

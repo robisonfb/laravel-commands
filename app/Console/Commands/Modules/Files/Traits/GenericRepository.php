@@ -211,7 +211,7 @@ trait GenericRepository
     }
 
     /**
-     * Generate a unique file name by adding a number suffix if the file already exists.
+     * Generate a unique file name by adding a number suffix if the filejá existe.
      *
      * @param string $folder
      * @param string $fileName
