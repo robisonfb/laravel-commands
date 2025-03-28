@@ -22,6 +22,9 @@ class ModuleAll extends Command
 
     public function handle()
     {
+        // Cabeçalho inicial
+        $this->alert('🚀 Gerador Automático de Módulo Laravel');
+
         if (!$modelInput = $this->option('model')) {
             $this->error('O parâmetro MODEL é obrigatório');
             return 1;
@@ -31,142 +34,99 @@ class ModuleAll extends Command
         $validationResult = $this->validateModelName($modelInput);
 
         if (!$validationResult['isValid']) {
-            $this->error('O nome do modelo não segue o padrão recomendado.');
-            $this->info('Problemas encontrados:');
+            $this->warn('⚠️ Problemas no nome do modelo');
+            $this->line('Problemas encontrados:');
 
             foreach ($validationResult['issues'] as $issue) {
-                $this->warn('- ' . $issue);
+                $this->comment('- ' . $issue);
             }
 
-            $this->info('Nome sugerido: ' . $validationResult['suggestion']);
+            $this->line('Nome sugerido: ' . $validationResult['suggestion']);
 
             if (!$this->confirm('Deseja continuar usando o nome sugerido?', true)) {
-                $this->error('Operação cancelada pelo usuário.');
+                $this->error('❌ Operação cancelada pelo usuário.');
                 return 1;
             }
 
             $model = $validationResult['suggestion'];
-            $this->info('Usando: ' . $model);
+            $this->info('✅ Usando: ' . $model);
         } else {
             $model = $modelInput;
         }
 
-        // Criar cada componente separadamente usando os stubs personalizados
-        $this->info('Criando componentes do módulo ' . $model . '...');
+        // Array de componentes a serem criados
+        $components = [
+            ['Model', 'module:model', true],
+            ['Migration', 'module:migration', true],
+            ['Factory', 'module:factory', true],
+            ['Observer', 'module:observer', true],
+            ['Policy', 'module:policy', true],
+            ['Seeder', 'module:seeder', false],
+            ['Controller', 'module:controller', false],
+            ['Store Request', 'module:store-request', false],
+            ['Update Request', 'module:update-request', false],
+            ['Resource', 'module:resource', false],
+            ['Collection', 'module:collection', false],
+            ['Test', 'module:test', true]
+        ];
 
-        // Criar o Model
-        $this->info('Criando Model...');
-        // $modelCommand = 'module:model ' . $model;
-        // $runModel = Artisan::call($modelCommand);
-        // if ($runModel !== 0) {
-        //     $this->error('Falha ao criar o Model');
-        //     return 1;
-        // }
+        $this->line('🔨 Criando componentes do módulo ' . $model . '...');
 
-        // Criar a Migration
-        $this->info('Criando Migration...');
-        $migrationCommand = 'module:migration ' . $model;
-        $runMigration = Artisan::call($migrationCommand);
-        if ($runMigration !== 0) {
-            $this->error('Falha ao criar a Migration');
-            return 1;
+
+        $failedComponents = [];
+
+        // Criar cada componente
+        foreach ($components as $component) {
+            $this->line('');
+            $this->comment("Criando {$component[0]}...");
+
+            $command = $component[1] . ' ' . $model;
+            $runCommand = Artisan::call($command);
+
+
+            if ($runCommand !== 0) {
+                $failedComponents[] = $component[0];
+                $this->error("❌ Falha ao criar {$component[0]}");
+
+                if ($component[2]) {  // Se for um componente crítico
+                    $this->error("❌ Erro crítico na criação do módulo.");
+                    return 1;
+                }
+            } else {
+                $this->info("✅ {$component[0]} criado com sucesso!");
+            }
         }
 
-        // // Criar a Factory
-        $this->info('Criando Factory...');
-        $factoryCommand = 'module:factory ' . $model;
-        $runFactory = Artisan::call($factoryCommand);
-        if ($runFactory !== 0) {
-            $this->error('Falha ao criar a Factory');
-            return 1;
+        $this->line('');
+
+        // Checagem final
+        if (!empty($failedComponents)) {
+            $this->warn('⚠️ Alguns componentes não foram criados:');
+            foreach ($failedComponents as $failed) {
+                $this->comment('- ' . $failed);
+            }
         }
 
-        // Criar o Seeder
-        $this->info('Criando Seeder...');
-        $seederCommand = 'module:seeder ' . $model;
-        $runSeeder = Artisan::call($seederCommand);
-        if ($runSeeder !== 0) {
-            $this->error('Falha ao criar o Seeder');
-            return 1;
-        }
+        $this->line('');
+        $this->alert('✅ Módulo criado com sucesso! 🎉');
 
-        // Criar o Controller
-        $this->info('Criando Controller...');
-        $controllerCommand = 'module:controller ' . $model;
-        $runController = Artisan::call($controllerCommand);
-        if ($runController !== 0) {
-            $this->error('Falha ao criar o Controller');
-            return 1;
-        }
+        // Seção de lembretes
+        $this->line('');
+        $this->comment('🔔 Próximos passos:');
 
-        // Criar os Requests
-        $this->info('Criando Store Request...');
-        $storeRequestCommand = 'module:store-request ' . $model;
-        $runStoreRequest = Artisan::call($storeRequestCommand);
-        if ($runStoreRequest !== 0) {
-            $this->error('Falha ao criar o Store Request');
-            return 1;
-        }
+        $this->table(['Tarefa', 'Comando'], [
+            ['Rotas API', "Route::apiResource('" . Str::plural(Str::lower($model)) . "', " . $model . "Controller::class);"],
+            ['Observador', $model . "::observe(" . $model . "Observer::class);"],
+            ['Política', $model . "::class => " . $model . "Policy::class,"],
+            ['Migração', 'php artisan migrate'],
+            ['Seeder', 'php artisan db:seed --class=' . $model . 'Seeder'],
+            ['Documentação API', 'php artisan l5-swagger:generate']
+        ]);
 
-        $this->info('Criando Update Request...');
-        $updateRequestCommand = 'module:update-request ' . $model;
-        $runUpdateRequest = Artisan::call($updateRequestCommand);
-        if ($runUpdateRequest !== 0) {
-            $this->error('Falha ao criar o Update Request');
-            return 1;
-        }
+        $this->line('');
+        $this->comment('Acesse a documentação em: /api/documentation');
 
-        // Criar o Resource
-        $this->info('Criando Resource...');
-        $resourceCommand = 'module:resource ' . $model;
-        $runResource = Artisan::call($resourceCommand);
-        if ($runResource !== 0) {
-            $this->error('Falha ao criar o Resource');
-            return 1;
-        }
-
-        // Criar a Collection
-        $this->info('Criando Collection...');
-        $collectionCommand = 'module:collection ' . $model;
-        $runCollection = Artisan::call($collectionCommand);
-        if ($runCollection !== 0) {
-            $this->error('Falha ao criar a Collection');
-            return 1;
-        }
-
-        $this->info('---------------------------------');
-        $this->info('✅ Módulo criado com sucesso!');
-        $this->info('---------------------------------');
-        $this->info('Lembretes:');
-        $this->info('');
-        $this->info('1. Em -->> routes/api.php');
-        $this->info('');
-        $this->info("/**");
-        $this->info("* " . Str::plural($model) . "");
-        $this->info(" */");
-        $this->info("Route::apiResource('" . Str::plural(Str::lower($model)) . "', " . $model . "Controller::class);");
-        $this->info("Route::get('" . Str::plural(Str::lower($model)) . "/search', [" . $model . "Controller::class, 'search'])->name('" . Str::plural(Str::lower($model)) . ".search');");
-        $this->info('');
-        $this->info('2. Em -->> app/Providers/AppServiceProvider.php (boot)');
-        $this->info('');
-        $this->info($model . "::observe(" . $model . "Observer::class);");
-        $this->info('');
-        $this->info('3. Em -->> app/Providers/AuthServiceProvider.php ($policies)');
-        $this->info('');
-        $this->info($model . "::class => " . $model . "Policy::class,");
-        $this->info('');
-        $this->info('4. Não se esqueça de executar as migrações e seeders:');
-        $this->info('');
-        $this->info('php artisan migrate');
-        $this->info('php artisan db:seed --class=' . $model . 'Seeder');
-        $this->info('');
-        $this->info('---------------------------------');
-        $this->info('Gerar Documentação da API:');
-        $this->info('');
-        $this->info('php artisan l5-swagger:generate');
-        $this->info('');
-        $this->info('Acesse a documentação em: /api/documentation');
-        $this->info('---------------------------------');
+        return 0;
     }
 
     /**
