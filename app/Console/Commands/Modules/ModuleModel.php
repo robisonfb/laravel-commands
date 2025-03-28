@@ -36,7 +36,12 @@ class ModuleModel extends GeneratorCommand
      */
     public function handle()
     {
-        parent::handle();
+        if ($this->alreadyExists($this->getNameInput())) {
+            $this->error($this->type . ' already exists!');
+            return 1; // Código de erro
+        }
+
+        return parent::handle();
     }
 
     /**

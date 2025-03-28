@@ -43,13 +43,12 @@ class ModuleObserver extends GeneratorCommand
      */
     public function handle()
     {
-        $result = parent::handle();
-
-        if ($result === false) {
-            return 1;
+        if ($this->alreadyExists($this->getNameInput())) {
+            $this->error($this->type . ' already exists!');
+            return 1; // Código de erro
         }
 
-        return 0;
+        return parent::handle();
     }
 
     /**
