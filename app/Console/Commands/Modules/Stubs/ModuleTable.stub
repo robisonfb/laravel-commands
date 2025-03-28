@@ -1,0 +1,51 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Execute as migrações.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('{modelNamePluralSnakeCase}', function (Blueprint $table) {
+            $table->id();
+
+            // Informações básicas
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->string('slug')->unique()->index();
+            $table->enum('status', ['ativo', 'inativo', 'pendente'])->default('ativo');
+
+            // Campos de preço e quantidade
+            $table->decimal('price', 10, 2)->nullable();
+            $table->integer('stock')->default(0);
+
+            // Armazenamento de arquivos
+            $table->json('files')->nullable();
+
+            // Relacionamentos
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+
+            // Campos de controle de tempo
+            $table->timestamp('published_at')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+    }
+
+    /**
+     * Reverter as migrações.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('{modelNamePluralSnakeCase}');
+    }
+};

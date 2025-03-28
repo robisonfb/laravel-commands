@@ -1,0 +1,118 @@
+<?php
+
+namespace App\Observers;
+
+use App\Models\{modelName};
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+
+class {modelName}Observer
+{
+    /**
+     * Handle the {modelName} "created" event.
+     *
+     * @param  \App\Models\{modelName}  ${modelNameLowerCase}
+     * @return void
+     */
+    public function created({modelName} ${modelNameLowerCase})
+    {
+        // Limpar cache relacionado
+        $this->clearCache();
+
+        // Registrar atividade
+        Log::info('{modelName} criado', ['id' => ${modelNameLowerCase}->id, 'name' => ${modelNameLowerCase}->name]);
+    }
+
+    /**
+     * Handle the {modelName} "updated" event.
+     *
+     * @param  \App\Models\{modelName}  ${modelNameLowerCase}
+     * @return void
+     */
+    public function updated({modelName} ${modelNameLowerCase})
+    {
+        // Limpar cache relacionado
+        $this->clearCache(${modelNameLowerCase}->id);
+
+        // Registrar atividade
+        Log::info('{modelName} atualizado', ['id' => ${modelNameLowerCase}->id, 'name' => ${modelNameLowerCase}->name]);
+    }
+
+    /**
+     * Handle the {modelName} "deleted" event.
+     *
+     * @param  \App\Models\{modelName}  ${modelNameLowerCase}
+     * @return void
+     */
+    public function deleted({modelName} ${modelNameLowerCase})
+    {
+        // Limpar cache relacionado
+        $this->clearCache(${modelNameLowerCase}->id);
+
+        // Registrar atividade
+        Log::info('{modelName} excluído', ['id' => ${modelNameLowerCase}->id, 'name' => ${modelNameLowerCase}->name]);
+    }
+
+    /**
+     * Handle the {modelName} "restored" event.
+     *
+     * @param  \App\Models\{modelName}  ${modelNameLowerCase}
+     * @return void
+     */
+    public function restored({modelName} ${modelNameLowerCase})
+    {
+        // Limpar cache relacionado
+        $this->clearCache(${modelNameLowerCase}->id);
+
+        // Registrar atividade
+        Log::info('{modelName} restaurado', ['id' => ${modelNameLowerCase}->id, 'name' => ${modelNameLowerCase}->name]);
+    }
+
+    /**
+     * Handle the {modelName} "force deleted" event.
+     *
+     * @param  \App\Models\{modelName}  ${modelNameLowerCase}
+     * @return void
+     */
+    public function forceDeleted({modelName} ${modelNameLowerCase})
+    {
+        // Limpar arquivos associados
+        if (!empty(${modelNameLowerCase}->files)) {
+            $files = is_array(${modelNameLowerCase}->files)
+                ? ${modelNameLowerCase}->files
+                : json_decode(${modelNameLowerCase}->files, true);
+
+            if (!empty($files)) {
+                foreach ($files as $file) {
+                    Storage::delete($file);
+                }
+            }
+        }
+
+        // Limpar cache relacionado
+        $this->clearCache(${modelNameLowerCase}->id);
+
+        // Registrar atividade
+        Log::info('{modelName} excluído permanentemente', ['id' => ${modelNameLowerCase}->id, 'name' => ${modelNameLowerCase}->name]);
+    }
+
+    /**
+     * Limpar cache relacionado ao modelo.
+     *
+     * @param int|null $id
+     * @return void
+     */
+    private function clearCache(?int $id = null)
+    {
+        // Limpar cache específico se ID for fornecido
+        if ($id) {
+            Cache::forget('{modelNameLowerCase}_' . $id);
+        }
+
+        // Limpar caches gerais
+        Cache::forget('{modelNamePluralLowerCase}_all');
+        Cache::forget('recent_{modelNamePluralLowerCase}');
+        Cache::forget('featured_{modelNamePluralLowerCase}');
+    }
+}

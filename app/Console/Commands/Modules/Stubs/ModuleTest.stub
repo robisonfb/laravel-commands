@@ -1,167 +1,315 @@
 <?php
 
+namespace Tests\Feature\Api;
+
+use App\Models\{modelName};
 use App\Models\User;
-use App\Models\Profile;
-use App\Models\DummyModel;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\UploadedFile;
-use function Pest\Laravel\{getJson, postJson, putJson, deleteJson};
-use Laravel\Sanctum\Sanctum;
+use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
 
-beforeEach(function () {
-    $this->user = User::factory()->create();
-    $this->profile = Profile::factory()->create(['user_id' => $this->user->id]);
-    $this->token = $this->user->createToken('test_token')->plainTextToken;
-});
+class {modelName}ApiTest extends TestCase
+{
+    use RefreshDatabase, WithFaker;
 
-it('prevents unauthorized access to protected routes', function () {
-    $response = getJson(route('DummyModelPluralObject.index'));
-    $response->assertStatus(401);
-});
+    protected $user;
+    protected ${modelNameLowerCase};
 
-it('checks relationships between DummyModelObject models', function () {
-    DummyModel::factory()->create(['profile_id' => $this->profile->id]);
+    /**
+     * Configuração antes de cada teste.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-    expect($this->profile->DummyModelPluralObject)->not->toBeEmpty();
-});
+        // Criar usuário para testes
+        $this->user = User::factory()->create();
 
-it('delete DummyModelObjects related to the selected profile', function () {
-    DummyModel::factory()->count(5)->create(['profile_id' => $this->profile->id]);
+        // Criar um {modelNameLowerCase} para testes
+        $this->{modelNameLowerCase} = {modelName}::factory()->create([
+            'user_id' => $this->user->id
+        ]);
 
-    $DummyModelIds = $this->profile->DummyModelPluralObject->pluck('id')->toArray();
-
-    $this->profile->delete();
-
-    foreach ($DummyModelIds as $id) {
-        $this->assertDatabaseMissing('DummyModelPluralObject', ['id' => $id]);
+        // Configurar armazenamento fake para testes de upload
+        Storage::fake('public');
     }
-});
 
-describe('Crud', function () {
-    it('returns a list of DummyModelObject', function () {
-        DummyModel::factory()->count(20)->create(['profile_id' => $this->profile->id]);
+    /**
+     * Testa a listagem de {modelNamePluralLowerCase}.
+     *
+     * @return void
+     */
+    public function test_can_list_{modelNamePluralSnakeCase}()
+    {
+        // Criar mais alguns registros para testar paginação
+        {modelName}::factory()->count(5)->create();
 
-        $data = [
-            'per_page' => '15',
-            'profile_id' => $this->profile->id,
-        ];
+        $response = $this->actingAs($this->user)
+            ->getJson(route('{modelNamePluralLowerCase}.index'));
 
-        $response = getJson(route('DummyModelPluralObject.index', $data), ['Authorization' => 'Bearer ' . $this->token])
-            ->assertStatus(200)
+        $response->assertStatus(200)
             ->assertJsonStructure([
                 'data' => [
-                    '*' => [],
+                    '*' => [
+                        'id',
+                        'name',
+                        'description',
+                        // Adicione outros campos conforme necessário
+                    ]
                 ],
-            ]);
+                'links',
+                'meta'
+            ])
+            ->assertJsonCount(6, 'data'); // 5 criados + 1 do setUp
+    }
 
-        expect($response['data']['pagination']['total'])->toBe(20);
-    });
+    /**
+     * Testa a filtragem e ordenação na listagem.
+     *
+     * @return void
+     */
+    public function test_can_filter_and_sort_{modelNamePluralSnakeCase}()
+    {
+        // Criar mais registros com diferentes atributos
+        {modelName}::factory()->create(['name' => 'Zzzz Last']);
+        {modelName}::factory()->create(['name' => 'Aaaa First']);
 
-    it('shows a DummyModelObject', function () {
-        $DummyModelObject = DummyModel::factory()->create(['profile_id' => $this->profile->id]);
+        // Testar ordenação ascendente por nome
+        $response = $this->actingAs($this->user)
+            ->getJson(route('{modelNamePluralLowerCase}.index', [
+                'sort_by' => 'name',
+                'sort_order' => 'asc'
+            ]));
 
-        getJson(route('DummyModelPluralObject.show', ['DummyModelObject' => $DummyModelObject->id]), ['Authorization' => 'Bearer ' . $this->token])
-            ->assertStatus(200)
-            ->assertJsonStructure([
-                'data' => [],
-            ]);
-    });
+        $response->assertStatus(200);
+        $data = $response->json('data');
+        $this->assertEquals('Aaaa First', $data[0]['name']);
 
-    it('stores a DummyModelObject', function () {
+        // Testar filtragem por nome
+        $response = $this->actingAs($this->user)
+            ->getJson(route('{modelNamePluralLowerCase}.index', [
+                'name' => 'Zzzz'
+            ]));
 
-        $file_path = public_path('test/file_test.jpeg');
+        $response->assertStatus(200)
+            ->assertJsonCount(1, 'data');
+    }
 
-        $data = DummyModel::factory()->make([
-            'profile_id' => $this->profile->id,
-            'file_path' => new UploadedFile($file_path, 'file_test.jpeg', 'image/jpeg', null, true),
-            ])->toArray();
+    /**
+     * Testa a visualização de um {modelNameLowerCase} específico.
+     *
+     * @return void
+     */
+    public function test_can_show_{modelNameSingularSnakeCase}()
+    {
+        $response = $this->actingAs($this->user)
+            ->getJson(route('{modelNamePluralLowerCase}.show', $this->{modelNameLowerCase}->id));
 
-        postJson(route('DummyModelPluralObject.store'), $data, ['Authorization' => 'Bearer ' . $this->token])
-            ->assertStatus(200)
+        $response->assertStatus(200)
             ->assertJson([
-                'success' => true,
-                'message' => __('DummyModel created successfully'),
-                'data' => [],
+                'data' => [
+                    'id' => $this->{modelNameLowerCase}->id,
+                    'name' => $this->{modelNameLowerCase}->name,
+                ]
             ]);
-    });
+    }
 
-    it('updates a DummyModelObject', function () {
-        $DummyModelObject = DummyModel::factory()->create(['profile_id' => $this->profile->id]);
-
-        $data = ['profile_id' => $this->profile->id];
-
-        putJson(route('DummyModelPluralObject.update', ['DummyModelObject' => $DummyModelObject->id]), $data, ['Authorization' => 'Bearer ' . $this->token])
-            ->assertStatus(200)
-            ->assertJson([
-                'success' => true,
-                'message' => __('DummyModel updated successfully'),
-                'data' => $data,
-            ]);
-    });
-
-    it('deletes a DummyModelObject', function () {
-        $DummyModelObject = DummyModel::factory()->create(['profile_id' => $this->profile->id]);
-
-        deleteJson(route('DummyModelPluralObject.destroy', ['DummyModelObject' => $DummyModelObject->id]), [], ['Authorization' => 'Bearer ' . $this->token])
-            ->assertStatus(200)
-            ->assertJson([
-                'success' => true,
-                'message' => __('DummyModel deleted successfully'),
-            ]);
-    });
-});
-
-describe('Validations', function () {
-    it('validates DummyModelObject required fields', function () {
-
+    /**
+     * Testa a criação de um novo {modelNameLowerCase}.
+     *
+     * @return void
+     */
+    public function test_can_create_{modelNameSingularSnakeCase}()
+    {
         $data = [
-            'profile_id' => $this->profile->id,
+            'name' => $this->faker->name,
+            'description' => $this->faker->paragraph,
+            'status' => 'ativo',
+            'price' => $this->faker->randomFloat(2, 10, 1000),
+            // Adicione outros campos conforme necessário
         ];
 
-        postJson(route('DummyModelPluralObject.store'), $data, ['Authorization' => 'Bearer ' . $this->token])
-            ->assertStatus(422)
-            ->assertJson(function($json) {
-                $json->where('success', false)
-                    ->where('message', __('validation.required', ['attribute' => 'type']) . ' (and 6 more errors)')
-                    ->has('errors', function($errors) {
-                        $errors->where('type', [__('validation.required', ['attribute' => 'type'])])
-                                ->where('street', [__('validation.required', ['attribute' => 'street'])])
-                                ->where('number', [__('validation.required', ['attribute' => 'number'])])
-                                ->where('zip_code', [__('validation.required', ['attribute' => 'zip code'])])
-                                ->where('city', [__('validation.required', ['attribute' => 'city'])])
-                                ->where('province', [__('validation.required', ['attribute' => 'province'])])
-                                ->where('country', [__('validation.required', ['attribute' => 'country'])]);
-                    });
-            });
+        // Adicionar um arquivo de teste
+        $data['files'] = [
+            UploadedFile::fake()->image('photo.jpg')
+        ];
 
-    });
+        $response = $this->actingAs($this->user)
+            ->postJson(route('{modelNamePluralLowerCase}.store'), $data);
 
-    it('validates DummyModelObject file upload', function () {
-        $file_path = public_path('test/file_test.jpeg');
-
-        $data = DummyModel::factory()->make([
-            'profile_id' => $this->profile->id,
-            'file_path' => new UploadedFile($file_path, 'file_test.jpeg', 'image/jpeg', null, true),
-        ])->toArray();
-
-        postJson(route('DummyModelPluralObject.store'), $data, ['Authorization' => 'Bearer ' . $this->token])
-            ->assertStatus(200)
-            ->assertJson([
-                'success' => true,
-                'message' => __('DummyModel created successfully'),
+        $response->assertStatus(201)
+            ->assertJsonStructure([
+                'data' => [
+                    'id',
+                    'name',
+                    'description',
+                    'status',
+                    'price',
+                    // Verificar se arquivos foram processados
+                    'files',
+                    'created_at',
+                ]
             ]);
-    });
 
-});
+        // Verificar se o registro foi criado no banco
+        $this->assertDatabaseHas('{modelNamePluralSnakeCase}', [
+            'name' => $data['name'],
+            'description' => $data['description'],
+        ]);
 
-describe('Permissions', function () {
-    // it('prevents users from accessing other users\' data', function () {
-    //     $otherUser = User::factory()->create();
-    //     $otherProfile = Profile::factory()->create(['user_id' => $otherUser->id]);
-    //     $DummyModelObject = DummyModel::factory()->create(['profile_id' => $otherProfile->id]);
+        // Verificar se o arquivo foi armazenado
+        $createdModel = {modelName}::where('name', $data['name'])->first();
+        $files = json_decode($createdModel->files, true);
+        $this->assertNotEmpty($files);
+        Storage::disk('public')->assertExists($files[0]);
+    }
 
-    //     $data = ['DummyModelObject' => $DummyModelObject->id];
+    /**
+     * Testa a validação na criação.
+     *
+     * @return void
+     */
+    public function test_validation_on_create_{modelNameSingularSnakeCase}()
+    {
+        $response = $this->actingAs($this->user)
+            ->postJson(route('{modelNamePluralLowerCase}.store'), [
+                // Dados incompletos/inválidos
+            ]);
 
-    //     $response = getJson(route('DummyModelPluralObject.show', $data), ['Authorization' => 'Bearer ' . $this->token]);
-    //     $response->assertStatus(200); // Adjust according to your application's authorization logic
-    // });
-});
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['name']); // Campos obrigatórios
+    }
+
+    /**
+     * Testa a atualização de um {modelNameLowerCase}.
+     *
+     * @return void
+     */
+    public function test_can_update_{modelNameSingularSnakeCase}()
+    {
+        $data = [
+            'name' => 'Nome Atualizado',
+            'description' => 'Descrição atualizada',
+        ];
+
+        $response = $this->actingAs($this->user)
+            ->putJson(route('{modelNamePluralLowerCase}.update', $this->{modelNameLowerCase}->id), $data);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'data' => [
+                    'id' => $this->{modelNameLowerCase}->id,
+                    'name' => 'Nome Atualizado',
+                    'description' => 'Descrição atualizada',
+                ]
+            ]);
+
+        // Verificar se o registro foi atualizado no banco
+        $this->assertDatabaseHas('{modelNamePluralSnakeCase}', [
+            'id' => $this->{modelNameLowerCase}->id,
+            'name' => 'Nome Atualizado',
+        ]);
+    }
+
+    /**
+     * Testa a exclusão de um {modelNameLowerCase}.
+     *
+     * @return void
+     */
+    public function test_can_delete_{modelNameSingularSnakeCase}()
+    {
+        $response = $this->actingAs($this->user)
+            ->deleteJson(route('{modelNamePluralLowerCase}.destroy', $this->{modelNameLowerCase}->id));
+
+        $response->assertStatus(204); // No Content
+
+        // Verificar se o registro foi removido (ou soft deleted)
+        // Para soft delete:
+        $this->assertSoftDeleted($this->{modelNameLowerCase});
+
+        // Para hard delete:
+        // $this->assertDatabaseMissing('{modelNamePluralSnakeCase}', ['id' => $this->{modelNameLowerCase}->id]);
+    }
+
+    /**
+     * Testa a busca de {modelNamePluralLowerCase}.
+     *
+     * @return void
+     */
+    public function test_can_search_{modelNamePluralSnakeCase}()
+    {
+        // Criar registros com nomes específicos para testar a busca
+        {modelName}::factory()->create(['name' => 'Termo Especial de Busca']);
+        {modelName}::factory()->create(['name' => 'Outro Nome Qualquer']);
+
+        $response = $this->actingAs($this->user)
+            ->getJson(route('{modelNamePluralLowerCase}.search', [
+                'q' => 'Especial',
+                'column' => 'name'
+            ]));
+
+        $response->assertStatus(200)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.name', 'Termo Especial de Busca');
+
+        // Testar busca em todos os campos
+        $response = $this->actingAs($this->user)
+            ->getJson(route('{modelNamePluralLowerCase}.search', [
+                'q' => 'Especial',
+                'column' => 'all'
+            ]));
+
+        $response->assertStatus(200)
+            ->assertJsonCount(1, 'data');
+    }
+
+    /**
+     * Testa o comportamento quando um {modelNameLowerCase} não é encontrado.
+     *
+     * @return void
+     */
+    public function test_returns_404_when_{modelNameSingularSnakeCase}_not_found()
+    {
+        $nonExistentId = 9999;
+
+        $this->actingAs($this->user)
+            ->getJson(route('{modelNamePluralLowerCase}.show', $nonExistentId))
+            ->assertStatus(404);
+
+        $this->actingAs($this->user)
+            ->putJson(route('{modelNamePluralLowerCase}.update', $nonExistentId), ['name' => 'Test'])
+            ->assertStatus(404);
+
+        $this->actingAs($this->user)
+            ->deleteJson(route('{modelNamePluralLowerCase}.destroy', $nonExistentId))
+            ->assertStatus(404);
+    }
+
+    /**
+     * Testa a autorização para acessar os endpoints.
+     *
+     * @return void
+     */
+    public function test_requires_authentication()
+    {
+        // Teste sem autenticação
+        $this->getJson(route('{modelNamePluralLowerCase}.index'))
+            ->assertStatus(401);
+
+        $this->getJson(route('{modelNamePluralLowerCase}.show', $this->{modelNameLowerCase}->id))
+            ->assertStatus(401);
+
+        $this->postJson(route('{modelNamePluralLowerCase}.store'), ['name' => 'Test'])
+            ->assertStatus(401);
+
+        $this->putJson(route('{modelNamePluralLowerCase}.update', $this->{modelNameLowerCase}->id), ['name' => 'Test'])
+            ->assertStatus(401);
+
+        $this->deleteJson(route('{modelNamePluralLowerCase}.destroy', $this->{modelNameLowerCase}->id))
+            ->assertStatus(401);
+    }
+}

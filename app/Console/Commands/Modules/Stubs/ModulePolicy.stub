@@ -2,49 +2,100 @@
 
 namespace App\Policies;
 
-use App\Models\DummyModel;
+use App\Models\{modelName};
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class DummyModelPolicy
+class {modelName}Policy
 {
     use HandlesAuthorization;
 
-    public function before($user, $ability)
+    /**
+     * Determine whether the user can view any models.
+     *
+     * @param  \App\Models\User  $user
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function viewAny(?User $user)
     {
-        if ($user->is_admin) {
-            return true;
-        }
-    }
-
-    public function viewAny(User $user)
-    {
+        // Todos podem ver a listagem
         return true;
     }
 
-    public function view(User $user, DummyModel $DummyModelObject)
+    /**
+     * Determine whether the user can view the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\{modelName}  ${modelNameLowerCase}
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function view(?User $user, {modelName} ${modelNameLowerCase})
     {
+        // Todos podem ver detalhes de um {modelNameLowerCase}
         return true;
     }
 
+    /**
+     * Determine whether the user can create models.
+     *
+     * @param  \App\Models\User  $user
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
     public function create(User $user)
     {
+        // Apenas usuários autenticados podem criar
         return true;
     }
 
-    public function update(User $user, DummyModel $DummyModelObject)
+    /**
+     * Determine whether the user can update the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\{modelName}  ${modelNameLowerCase}
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function update(User $user, {modelName} ${modelNameLowerCase})
     {
-        return true;
+        // Usuários só podem atualizar seus próprios {modelNamePluralLowerCase} ou se for admin
+        return $user->id === ${modelNameLowerCase}->user_id || $user->isAdmin();
     }
 
-    public function delete(User $user, DummyModel $DummyModelObject)
+    /**
+     * Determine whether the user can delete the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\{modelName}  ${modelNameLowerCase}
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function delete(User $user, {modelName} ${modelNameLowerCase})
     {
-        return true;
+        // Usuários só podem excluir seus próprios {modelNamePluralLowerCase} ou se for admin
+        return $user->id === ${modelNameLowerCase}->user_id || $user->isAdmin();
     }
 
-    public function restore(User $user, DummyModel $DummyModelObject)
+    /**
+     * Determine whether the user can restore the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\{modelName}  ${modelNameLowerCase}
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function restore(User $user, {modelName} ${modelNameLowerCase})
     {
-        return true;
+        // Apenas admins podem restaurar {modelNamePluralLowerCase} excluídos
+        return $user->isAdmin();
     }
 
+    /**
+     * Determine whether the user can permanently delete the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\{modelName}  ${modelNameLowerCase}
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function forceDelete(User $user, {modelName} ${modelNameLowerCase})
+    {
+        // Apenas admins podem excluir permanentemente
+        return $user->isAdmin();
+    }
 }

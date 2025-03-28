@@ -1,23 +1,80 @@
 <?php
 
-namespace DummyNamespace;
+namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
-
-/**
- * Class DummyClass
- *
- * @property int $id
- * @property string $name
- *
- */
-
-class DummyClass extends JsonResource
+class {modelName}Resource extends JsonResource
 {
-
-    public function toArray($request)
+    /**
+     * Transform the resource into an array.
+     *
+     * @param  Request  $request
+     * @return array
+     */
+    public function toArray($request): array
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+
+            // Campos básicos - substitua pelos campos do seu modelo
+            'name' => $this->name,
+            'description' => $this->description,
+            'status' => $this->status,
+
+            // Exemplo de formatação de números
+            'price' => $this->when($this->price, function() {
+                return [
+                    'raw' => $this->price,
+                    'formatted' => 'R$ ' . number_format($this->price, 2, ',', '.'),
+                ];
+            }),
+
+            // Exemplo de tratamento de arquivos
+            'files' => $this->when($this->files, function() {
+                $files = json_decode($this->files, true) ?: [];
+                return collect($files)->map(function($file) {
+                    return [
+                        'path' => $file,
+                        'url' => Storage::url($file),
+                    ];
+                });
+            }),
+
+            // Exemplo de relacionamento simples
+            'category' => new CategoryResource($this->whenLoaded('category')),
+
+            // Exemplo de relacionamento de coleção
+            'tags' => TagResource::collection($this->whenLoaded('tags')),
+
+            // Timestamps formatados
+            'created_at' => $this->created_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
+
+            // Links para o recurso
+            'links' => [
+                'self' => route('{modelNamePluralLowerCase}.show', $this->id),
+                'edit' => route('{modelNamePluralLowerCase}.edit', $this->id),
+                'delete' => route('{modelNamePluralLowerCase}.destroy', $this->id),
+            ],
+        ];
+    }
+
+    /**
+     * Get additional data that should be returned with the resource array.
+     *
+     * @param  Request  $request
+     * @return array
+     */
+    public function with($request): array
+    {
+        return [
+            'meta' => [
+                'version' => '1.0',
+                'api_status' => 'stable',
+            ],
+        ];
     }
 }

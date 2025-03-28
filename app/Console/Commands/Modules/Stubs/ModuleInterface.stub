@@ -1,7 +1,0 @@
-<?php
-
-namespace DummyNamespace;
-
-interface DummyClass extends GenericRepositoryInterface
-{
-}

@@ -1,0 +1,123 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+/**
+ * @OA\Schema(
+ *     schema="{modelName}",
+ *     required={"name", "status"},
+ *     @OA\Property(property="id", type="integer", format="int64", example=1),
+ *     @OA\Property(property="name", type="string", example="{modelName} Exemplo"),
+ *     @OA\Property(property="slug", type="string", example="{modelNameLowerCase}-exemplo"),
+ *     @OA\Property(property="description", type="string", example="Descrição detalhada do {modelNameLowerCase}"),
+ *     @OA\Property(property="status", type="string", enum={"ativo", "inativo", "pendente"}, example="ativo"),
+ *     @OA\Property(property="price", type="number", format="float", example=199.99),
+ *     @OA\Property(property="files", type="array", @OA\Items(type="string"), example={"products/exemplo1.jpg"}),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="Store{modelName}Request",
+ *     required={"name", "status"},
+ *     @OA\Property(property="name", type="string", example="{modelName} Exemplo"),
+ *     @OA\Property(property="description", type="string", example="Descrição detalhada do {modelNameLowerCase}"),
+ *     @OA\Property(property="status", type="string", enum={"ativo", "inativo", "pendente"}, example="ativo"),
+ *     @OA\Property(property="price", type="number", format="float", example=199.99),
+ *     @OA\Property(property="files[]", type="array", @OA\Items(type="file"), description="Arquivos anexados")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="Update{modelName}Request",
+ *     @OA\Property(property="name", type="string", example="{modelName} Atualizado"),
+ *     @OA\Property(property="description", type="string", example="Descrição atualizada"),
+ *     @OA\Property(property="status", type="string", enum={"ativo", "inativo", "pendente"}, example="ativo"),
+ *     @OA\Property(property="price", type="number", format="float", example=249.99),
+ *     @OA\Property(property="files[]", type="array", @OA\Items(type="file"), description="Novos arquivos"),
+ *     @OA\Property(property="remove_files", type="array", @OA\Items(type="string"), description="Arquivos para remover")
+ * )
+ *
+ * @OA\Tag(
+ *     name="{modelNamePluralLowerCase}",
+ *     description="Operações relacionadas a {modelNamePluralLowerCase}"
+ * )
+ *
+ * @OA\Get(
+ *     path="/api/{modelNamePluralLowerCase}",
+ *     tags={"{modelNamePluralLowerCase}"},
+ *     summary="Listar todos os {modelNamePluralLowerCase}",
+ *     @OA\Parameter(name="per_page", in="query", @OA\Schema(type="integer")),
+ *     @OA\Parameter(name="sort_by", in="query", @OA\Schema(type="string")),
+ *     @OA\Parameter(name="sort_order", in="query", @OA\Schema(type="string", enum={"asc", "desc"})),
+ *     @OA\Response(response=200, description="Lista de {modelNamePluralLowerCase}"),
+ *     @OA\Response(response=401, description="Não autorizado")
+ * )
+ *
+ * @OA\Get(
+ *     path="/api/{modelNamePluralLowerCase}/{id}",
+ *     tags={"{modelNamePluralLowerCase}"},
+ *     summary="Obter um {modelNameLowerCase} específico",
+ *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+ *     @OA\Response(response=200, description="{modelName} encontrado"),
+ *     @OA\Response(response=404, description="{modelName} não encontrado")
+ * )
+ *
+ * @OA\Post(
+ *     path="/api/{modelNamePluralLowerCase}",
+ *     tags={"{modelNamePluralLowerCase}"},
+ *     summary="Criar um novo {modelNameLowerCase}",
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(ref="#/components/schemas/Store{modelName}Request")
+ *         )
+ *     ),
+ *     @OA\Response(response=201, description="{modelName} criado"),
+ *     @OA\Response(response=422, description="Dados inválidos"),
+ *     @OA\Response(response=401, description="Não autorizado")
+ * )
+ *
+ * @OA\Put(
+ *     path="/api/{modelNamePluralLowerCase}/{id}",
+ *     tags={"{modelNamePluralLowerCase}"},
+ *     summary="Atualizar um {modelNameLowerCase} existente",
+ *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(ref="#/components/schemas/Update{modelName}Request")
+ *         )
+ *     ),
+ *     @OA\Response(response=200, description="{modelName} atualizado"),
+ *     @OA\Response(response=404, description="{modelName} não encontrado"),
+ *     @OA\Response(response=422, description="Dados inválidos"),
+ *     @OA\Response(response=401, description="Não autorizado")
+ * )
+ *
+ * @OA\Delete(
+ *     path="/api/{modelNamePluralLowerCase}/{id}",
+ *     tags={"{modelNamePluralLowerCase}"},
+ *     summary="Excluir um {modelNameLowerCase}",
+ *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+ *     @OA\Response(response=204, description="{modelName} excluído"),
+ *     @OA\Response(response=404, description="{modelName} não encontrado"),
+ *     @OA\Response(response=401, description="Não autorizado")
+ * )
+ *
+ * @OA\Get(
+ *     path="/api/{modelNamePluralLowerCase}/search",
+ *     tags={"{modelNamePluralLowerCase}"},
+ *     summary="Buscar {modelNamePluralLowerCase}",
+ *     @OA\Parameter(name="q", in="query", required=true, @OA\Schema(type="string")),
+ *     @OA\Parameter(name="column", in="query", required=true, @OA\Schema(type="string")),
+ *     @OA\Parameter(name="per_page", in="query", @OA\Schema(type="integer")),
+ *     @OA\Response(response=200, description="Resultados da busca"),
+ *     @OA\Response(response=422, description="Parâmetros inválidos")
+ * )
+ */
+class {modelName}ApiDoc
+{
+    // Esta classe é usada apenas para documentação Swagger/OpenAPI
+}

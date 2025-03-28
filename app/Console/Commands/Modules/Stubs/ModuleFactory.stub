@@ -1,0 +1,50 @@
+<?php
+
+namespace Database\Factories;
+
+use App\Models\{modelName};
+use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\{modelName}>
+ */
+class {modelName}Factory extends Factory
+{
+    /**
+     * Define o modelo que será usado por esta factory.
+     *
+     * @var string
+     */
+    protected $model = {modelName}::class;
+
+    /**
+     * Define o estado padrão do modelo.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        $name = $this->faker->sentence(3);
+
+        return [
+            'name' => $name,
+            'slug' => Str::slug($name),
+            'description' => $this->faker->paragraph,
+            'status' => $this->faker->randomElement(['ativo', 'inativo', 'pendente']),
+            'price' => $this->faker->randomFloat(2, 10, 1000),
+            'stock' => $this->faker->numberBetween(0, 100),
+            'files' => json_encode([
+                'products/' . $this->faker->uuid . '.jpg',
+                'products/' . $this->faker->uuid . '.jpg',
+            ]),
+            'user_id' => function () {
+                return User::factory()->create()->id;
+            },
+            'published_at' => $this->faker->dateTimeBetween('-1 year', 'now'),
+            'created_at' => $this->faker->dateTimeBetween('-2 years', '-1 year'),
+            'updated_at' => $this->faker->dateTimeBetween('-1 year', 'now'),
+        ];
+    }
+}

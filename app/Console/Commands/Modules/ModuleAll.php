@@ -12,7 +12,7 @@ class ModuleAll extends Command
                             {--m|model= : The name of the model.}
                             ';
 
-    protected $description = 'Command description';
+    protected $description = 'Create all module files including model, controller, requests, tests, etc.';
 
     public function __construct()
     {
@@ -22,90 +22,160 @@ class ModuleAll extends Command
     public function handle()
     {
         if (!$model = $this->option('model')) {
-            $this->info('MODEL parameter is not optional');
-
-            return;
+            $this->error('MODEL parameter is required');
+            return 1;
         }
 
-        //        $command = 'module:model ' . $model;
+        // Criar o Model com factory, migration e seeder
         $command = 'make:model ' . $model . ' -f -m -s';
-        $this->info('Make Model...');
+        $this->info('Creating Model with migration, factory and seeder...');
         $run = Artisan::call($command);
-
         if ($run !== 0) {
-            $this->info('Failed Make Model');
+            $this->error('Failed to create Model');
         }
 
-        $command = 'make:observer ' . $model . 'Observer';
-        $this->info('Make Observer...');
+        // Criar a tabela
+        $command = 'module:table ' . $model;
+        $this->info('Creating Table...');
         $run = Artisan::call($command);
-
         if ($run !== 0) {
-            $this->info('Failed Make Model');
+            $this->error('Failed to create Table');
         }
 
+        // Criar o Observer
+        $command = 'module:observer ' . $model;
+        $this->info('Creating Observer...');
+        $run = Artisan::call($command);
+        if ($run !== 0) {
+            $this->error('Failed to create Observer');
+        }
+
+        // Criar a Policy
         $command = 'module:policy ' . $model;
-        $this->info('Make Policy...');
+        $this->info('Creating Policy...');
         $run = Artisan::call($command);
-
         if ($run !== 0) {
-            $this->info('Failed Make Policy');
+            $this->error('Failed to create Policy');
         }
 
+        // Criar o Controller
         $command = 'module:controller ' . $model;
-        $this->info('Make Controller...');
+        $this->info('Creating Controller...');
         $run = Artisan::call($command);
-
         if ($run !== 0) {
-            $this->info('Failed Make Controller');
+            $this->error('Failed to create Controller');
         }
 
-        $command = 'module:request ' . $model;
-        $this->info('Make Request...');
+        // Criar os Requests (Store e Update)
+        $command = 'module:storerequest ' . $model;
+        $this->info('Creating Store Request...');
         $run = Artisan::call($command);
-
         if ($run !== 0) {
-            $this->info('Failed Make Request');
+            $this->error('Failed to create Store Request');
         }
 
+        $command = 'module:updaterequest ' . $model;
+        $this->info('Creating Update Request...');
+        $run = Artisan::call($command);
+        if ($run !== 0) {
+            $this->error('Failed to create Update Request');
+        }
+
+        // Criar o Repository
         $command = 'module:repository ' . $model;
-        $this->info('Make Repository...');
+        $this->info('Creating Repository...');
         $run = Artisan::call($command);
-
         if ($run !== 0) {
-            $this->info('Failed Make Repository');
+            $this->error('Failed to create Repository');
         }
 
+        // Criar os Resources (Resource e Collection)
         $command = 'module:resource ' . $model;
-        $this->info('Make Resource...');
+        $this->info('Creating Resource...');
         $run = Artisan::call($command);
-
         if ($run !== 0) {
-            $this->info('Failed Make Resource');
+            $this->error('Failed to create Resource');
         }
 
-        $command = 'module:test ' . $model;
-        $this->info('Make Test...');
+        $command = 'module:collection ' . $model;
+        $this->info('Creating Collection...');
         $run = Artisan::call($command);
-
         if ($run !== 0) {
-            $this->info('Failed Make Test');
+            $this->error('Failed to create Collection');
+        }
+
+        // Criar o Factory
+        $command = 'module:factory ' . $model;
+        $this->info('Creating Factory...');
+        $run = Artisan::call($command);
+        if ($run !== 0) {
+            $this->error('Failed to create Factory');
+        }
+
+        // Criar o Seeder
+        $command = 'module:seeder ' . $model;
+        $this->info('Creating Seeder...');
+        $run = Artisan::call($command);
+        if ($run !== 0) {
+            $this->error('Failed to create Seeder');
+        }
+
+        // Criar os Testes
+        $command = 'module:test ' . $model;
+        $this->info('Creating Tests...');
+        $run = Artisan::call($command);
+        if ($run !== 0) {
+            $this->error('Failed to create Tests');
+        }
+
+        // Criar o Event Listener
+        $command = 'module:eventlistener ' . $model;
+        $this->info('Creating Event Listener...');
+        $run = Artisan::call($command);
+        if ($run !== 0) {
+            $this->error('Failed to create Event Listener');
+        }
+
+        // Criar a Documentação API
+        $command = 'module:apidoc ' . $model;
+        $this->info('Creating API Documentation...');
+        $run = Artisan::call($command);
+        if ($run !== 0) {
+            $this->error('Failed to create API Documentation');
         }
 
         $this->info('---------------------------------');
+        $this->info('✅ Module created successfully!');
+        $this->info('---------------------------------');
         $this->info('Reminders:');
         $this->info('');
-        $this->info('In -->> routes\api.php');
+        $this->info('1. In -->> routes/api.php');
         $this->info('');
         $this->info("/**");
         $this->info("* " . Str::plural($model) . "");
         $this->info(" */");
         $this->info("Route::apiResource('" . Str::plural(Str::lower($model)) . "', " . $model . "Controller::class);");
+        $this->info("Route::get('" . Str::plural(Str::lower($model)) . "/search', [" . $model . "Controller::class, 'search'])->name('" . Str::plural(Str::lower($model)) . ".search');");
         $this->info('');
-        $this->info('In -->> app\Providers\AppServiceProvider.php (boot)');
+        $this->info('2. In -->> app/Providers/AppServiceProvider.php (boot)');
         $this->info('');
         $this->info($model . "::observe(" . $model . "Observer::class);");
         $this->info('');
+        $this->info('3. In -->> app/Providers/AuthServiceProvider.php ($policies)');
+        $this->info('');
+        $this->info($model . "::class => " . $model . "Policy::class,");
+        $this->info('');
+        $this->info('4. Don\'t forget to run migrations and seeders:');
+        $this->info('');
+        $this->info('php artisan migrate');
+        $this->info('php artisan db:seed --class=' . $model . 'Seeder');
+        $this->info('');
+        $this->info('---------------------------------');
+        $this->info('Generate API Documentation:');
+        $this->info('');
+        $this->info('php artisan l5-swagger:generate');
+        $this->info('');
+        $this->info('Access documentation at: /api/documentation');
         $this->info('---------------------------------');
     }
 }

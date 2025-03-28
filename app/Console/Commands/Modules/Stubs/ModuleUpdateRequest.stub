@@ -1,0 +1,115 @@
+<?php
+
+namespace App\Http\Requests;
+
+use App\Models\{modelName};
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
+
+class Update{modelName}Request extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     *
+     * @return bool
+     */
+    public function authorize()
+    {
+        // Opção 1: Verificar através do Gate/Policy
+        // return Gate::allows('update', ${modelNameLowerCase});
+
+        // Opção 2: Verificação simplificada
+        // ${modelNameLowerCase} = {modelName}::findOrFail($this->route('{modelNameLowerCase}'));
+        // return auth()->user()->can('update', ${modelNameLowerCase});
+
+        // Alternativa: Permitir todos os usuários autenticados
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, mixed>
+     */
+    public function rules()
+    {
+        return [
+            // Adicione suas regras aqui. Exemplos:
+            'name' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|nullable|string',
+            'status' => ['sometimes', 'required', Rule::in(['ativo', 'inativo', 'pendente'])],
+
+            // Exemplo com validação unique que ignora o registro atual
+            'email' => [
+                'sometimes',
+                'required',
+                'email',
+                Rule::unique('users', 'email')->ignore($this->route('{modelNameLowerCase}'))
+            ],
+
+            // Exemplo para relacionamentos
+            'category_id' => 'sometimes|nullable|exists:categories,id',
+
+            // Exemplo para arrays
+            'tags' => 'sometimes|array',
+            'tags.*' => 'exists:tags,id',
+
+            // Exemplo para arquivos
+            'files' => 'sometimes|array',
+            'files.*' => 'file|mimes:jpeg,png,jpg,gif,pdf|max:5120',
+
+            // Exemplo para remoção de arquivos
+            'remove_files' => 'sometimes|array',
+            'remove_files.*' => 'string',
+        ];
+    }
+
+    /**
+     * Get custom attributes for validator errors.
+     *
+     * @return array
+     */
+    public function attributes()
+    {
+        return [
+            'name' => __('messages.name'),
+            'description' => __('messages.description'),
+            'status' => __('messages.status'),
+            'category_id' => __('messages.category'),
+            'tags' => __('messages.tags'),
+            'files' => __('messages.files'),
+            'remove_files' => __('messages.remove_files'),
+        ];
+    }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array
+     */
+    public function messages()
+    {
+        return [
+            'status.in' => __('messages.status_invalid_option'),
+            'category_id.exists' => __('messages.category_not_found'),
+            'files.*.mimes' => __('messages.file_invalid_type'),
+            'files.*.max' => __('messages.file_size_exceeded'),
+        ];
+    }
+
+    /**
+     * Prepare the data for validation.
+     *
+     * @return void
+     */
+    protected function prepareForValidation()
+    {
+        // Exemplo de preparação de dados antes da validação
+        if ($this->has('name')) {
+            $this->merge([
+                'slug' => \Illuminate\Support\Str::slug($this->name),
+            ]);
+        }
+    }
+}

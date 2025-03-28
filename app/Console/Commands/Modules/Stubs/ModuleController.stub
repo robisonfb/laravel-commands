@@ -22,7 +22,7 @@ class DummyClass extends Controller
 {
 
     /**
-     * Display a listing of {modelNamePluralLowerCase}.
+     * Exibe uma listagem de {modelNamePluralLowerCase}.
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -31,21 +31,21 @@ class DummyClass extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            // Get query parameters for filtering and pagination
+            // Obtém parâmetros de consulta para filtragem e paginação
             $perPage = $request->query('per_page', 15);
 
             // Coluna de classificação
             $sortBy = $request->query('sort_by', 'created_at');
             $validSortOrders = ['created_at', 'updated_at']; // Adicione outras colunas para ordens de classificação
             if (!in_array(strtolower($sortBy), $validSortOrders)) {
-                $sortOrder = 'created_at'; // Fallback para coluna segura
+                $sortOrder = 'created_at';
             }
 
             // Ordem de classificação
             $sortOrder = $request->query('sort_order', 'desc');
             $validSortOrders = ['asc', 'desc'];
             if (!in_array(strtolower($sortOrder), $validSortOrders)) {
-                $sortOrder = 'desc'; // Fallback para ordem segura
+                $sortOrder = 'desc';
             }
 
             // Tenta encontrar a coleção de {modelNamePluralLowerCase} usando o cache
@@ -57,24 +57,29 @@ class DummyClass extends Controller
             $query = {modelName}::query();
 
             // Aplicar filtros
-            $query->orderBy($sortBy, $sortOrder);
+            ${modelNamePluralLowerCase} = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
 
-            // Get paginated results
-            ${modelNamePluralLowerCase} = $query->paginate($perPage);
+            // Verificar se algum resultado foi encontrado
+            if (${modelNamePluralLowerCase}->isEmpty()) {
+                return response()->json([
+                    'message' => __('messages.no_results_found', ['model' => '{modelNamePluralLowerCase}']),
+                    'data' => []
+                ], Response::HTTP_OK);
+            }
 
             // Retorna coleção de recursos
             return new {modelName}Collection(${modelNamePluralLowerCase});
         } catch (\Exception $e) {
-            Log::error('Error fetching {modelNamePluralLowerCase}: ' . $e->getMessage());
+            Log::error('Erro ao buscar {modelNamePluralLowerCase}: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Failed to fetch {modelNamePluralLowerCase}',
+                'message' => __('messages.failed_to_fetch', ['model' => '{modelNamePluralLowerCase}']),
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
-     * Store a newly created {modelNameLowerCase} in storage.
+     * Armazena um novo {modelNameLowerCase} no banco de dados.
      *
      * @param Store{modelName}Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -105,16 +110,16 @@ class DummyClass extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('Error creating {modelNameLowerCase}: ' . $e->getMessage());
+            Log::error('Erro ao criar {modelNameLowerCase}: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Failed to create {modelNameLowerCase}',
+                'message' => __('messages.failed_to_create', ['model' => '{modelNameLowerCase}']),
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
-     * Display the specified {modelNameLowerCase}.
+     * Exibe o {modelNameLowerCase} especificado.
      *
      * @param int $id
      * @return \Illuminate\Http\JsonResponse
@@ -130,19 +135,19 @@ class DummyClass extends Controller
             return new {modelName}Resource(${modelNameLowerCase});
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => '{modelName} not found'
+                'message' => __('messages.model_not_found', ['model' => '{modelName}'])
             ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
-            Log::error('Error fetching {modelNameLowerCase}: ' . $e->getMessage());
+            Log::error('Erro ao buscar {modelNameLowerCase}: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Failed to fetch {modelNameLowerCase}',
+                'message' => __('messages.failed_to_fetch', ['model' => '{modelNameLowerCase}']),
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
-     * Update the specified {modelNameLowerCase} in storage.
+     * Atualiza o {modelNameLowerCase} especificado no banco de dados.
      *
      * @param Update{modelName}Request $request
      * @param int $id
@@ -170,6 +175,34 @@ class DummyClass extends Controller
                 $validatedData['files'] = json_encode($allFiles);
             }
 
+            // Remover arquivos específicos se solicitado
+            if ($request->has('remove_files') && is_array($request->remove_files)) {
+                $existingFiles = !empty(${modelNameLowerCase}->files)
+                    ? json_decode(${modelNameLowerCase}->files, true)
+                    : [];
+
+                if (!empty($existingFiles)) {
+                    $filesToRemove = [];
+                    $remainingFiles = [];
+
+                    foreach ($existingFiles as $file) {
+                        if (in_array($file, $request->remove_files)) {
+                            $filesToRemove[] = $file;
+                        } else {
+                            $remainingFiles[] = $file;
+                        }
+                    }
+
+                    // Excluir os arquivos físicos
+                    if (!empty($filesToRemove)) {
+                        delete_files($filesToRemove);
+                    }
+
+                    // Atualizar a lista de arquivos
+                    $validatedData['files'] = json_encode($remainingFiles);
+                }
+            }
+
             // Atualizar o {modelNameLowerCase}
             ${modelNameLowerCase}->update($validatedData);
 
@@ -183,21 +216,21 @@ class DummyClass extends Controller
         } catch (ModelNotFoundException $e) {
             DB::rollBack();
             return response()->json([
-                'message' => '{modelName} not found'
+                'message' => __('messages.model_not_found', ['model' => '{modelName}'])
             ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('Error updating {modelNameLowerCase}: ' . $e->getMessage());
+            Log::error('Erro ao atualizar {modelNameLowerCase}: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Failed to update {modelNameLowerCase}',
+                'message' => __('messages.failed_to_update', ['model' => '{modelNameLowerCase}']),
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
-     * Remove the specified {modelNameLowerCase} from storage.
+     * Remove o {modelNameLowerCase} especificado do banco de dados.
      *
      * @param int $id
      * @return \Illuminate\Http\JsonResponse
@@ -227,21 +260,21 @@ class DummyClass extends Controller
         } catch (ModelNotFoundException $e) {
             DB::rollBack();
             return response()->json([
-                'message' => '{modelName} not found'
+                'message' => __('messages.model_not_found', ['model' => '{modelName}'])
             ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('Error deleting {modelNameLowerCase}: ' . $e->getMessage());
+            Log::error('Erro ao excluir {modelNameLowerCase}: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Failed to delete {modelNameLowerCase}',
+                'message' => __('messages.failed_to_delete', ['model' => '{modelNameLowerCase}']),
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
-     * Search for {modelNamePluralLowerCase} by any column.
+     * Pesquisa {modelNamePluralLowerCase} por qualquer coluna.
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -269,7 +302,7 @@ class DummyClass extends Controller
             // Verifica se a coluna solicitada está disponível
             if (!in_array($column, $availableColumns)) {
                 return response()->json([
-                    'message' => 'Invalid column specified',
+                    'message' => __('messages.invalid_column'),
                     'available_columns' => $availableColumns
                 ], Response::HTTP_BAD_REQUEST);
             }
@@ -299,7 +332,7 @@ class DummyClass extends Controller
             // Verificar se algum resultado foi encontrado
             if (${modelNamePluralLowerCase}->isEmpty()) {
                 return response()->json([
-                    'message' => 'No {modelNamePluralLowerCase} found for the given search criteria',
+                    'message' => __('messages.no_results_found', ['model' => '{modelNamePluralLowerCase}']),
                     'data' => []
                 ], Response::HTTP_OK);
             }
@@ -307,13 +340,13 @@ class DummyClass extends Controller
             return new {modelName}Collection(${modelNamePluralLowerCase});
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'message' => 'Validation error',
+                'message' => __('messages.validation_error'),
                 'errors' => $e->errors()
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (\Exception $e) {
-            Log::error('Error searching {modelNamePluralLowerCase}: ' . $e->getMessage());
+            Log::error('Erro ao pesquisar {modelNamePluralLowerCase}: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Failed to search {modelNamePluralLowerCase}',
+                'message' => __('messages.failed_to_search', ['model' => '{modelNamePluralLowerCase}']),
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

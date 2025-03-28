@@ -1,0 +1,75 @@
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Http\Request;
+
+class {modelName}Collection extends ResourceCollection
+{
+    /**
+     * The resource that this resource collects.
+     *
+     * @var string
+     */
+    public $collects = {modelName}Resource::class;
+
+    /**
+     * Transform the resource collection into an array.
+     *
+     * @param  Request  $request
+     * @return array
+     */
+    public function toArray($request): array
+    {
+        return [
+            'data' => $this->collection,
+        ];
+    }
+
+    /**
+     * Get additional data that should be returned with the resource array.
+     *
+     * @param  Request  $request
+     * @return array
+     */
+    public function with($request): array
+    {
+        return [
+            'meta' => [
+                'version' => '1.0',
+                'api_status' => 'stable',
+                'timestamp' => now()->toIso8601String(),
+            ],
+        ];
+    }
+
+    /**
+     * Customize the pagination information for the resource.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  array $paginated
+     * @param  array $default
+     * @return array
+     */
+    public function paginationInformation($request, $paginated, $default): array
+    {
+        return [
+            'links' => [
+                'first' => $paginated['first_page_url'] ?? null,
+                'last' => $paginated['last_page_url'] ?? null,
+                'prev' => $paginated['prev_page_url'] ?? null,
+                'next' => $paginated['next_page_url'] ?? null,
+            ],
+            'meta' => [
+                'current_page' => $paginated['current_page'],
+                'from' => $paginated['from'] ?? null,
+                'last_page' => $paginated['last_page'],
+                'path' => $paginated['path'] ?? null,
+                'per_page' => $paginated['per_page'],
+                'to' => $paginated['to'] ?? null,
+                'total' => $paginated['total'],
+            ],
+        ];
+    }
+}
