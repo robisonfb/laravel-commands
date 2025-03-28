@@ -125,14 +125,14 @@ class ModuleAll extends Command
             return 1;
         }
 
-        // // Criar a Collection
-        // $this->info('Criando Collection...');
-        // $collectionCommand = 'module:collection ' . $model;
-        // $runCollection = Artisan::call($collectionCommand);
-        // if ($runCollection !== 0) {
-        //     $this->error('Falha ao criar a Collection');
-        //     return 1;
-        // }
+        // Criar a Collection
+        $this->info('Criando Collection...');
+        $collectionCommand = 'module:collection ' . $model;
+        $runCollection = Artisan::call($collectionCommand);
+        if ($runCollection !== 0) {
+            $this->error('Falha ao criar a Collection');
+            return 1;
+        }
 
         $this->info('---------------------------------');
         $this->info('✅ Módulo criado com sucesso!');
