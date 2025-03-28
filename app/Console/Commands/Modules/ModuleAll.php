@@ -149,17 +149,26 @@ class ModuleAll extends Command
         $this->alert('✅ Módulo criado com sucesso! 🎉');
 
         // Seção de lembretes
+
         $this->line('');
         $this->comment('🔔 Próximos passos:');
 
-        $this->table(['Tarefa', 'Comando / Instruções'], [
+        // Criamos um array com linhas separadoras entre cada item
+        $tableData = [
             ['Rotas API', "Route::apiResource('" . Str::plural(Str::lower($model)) . "', " . $model . "Controller::class);\n● Adicione no arquivo routes/api.php"],
+            ['', ''], // Linha vazia que servirá como separador
             ['Observador', $model . "::observe(" . $model . "Observer::class);\n● Adicione no método boot() do AppServiceProvider ou em outro ServiceProvider apropriado"],
+            ['', ''], // Linha vazia que servirá como separador
             ['Política', $model . "::class => " . $model . "Policy::class,\n● Adicione no array \$policies do AuthServiceProvider"],
+            ['', ''], // Linha vazia que servirá como separador
             ['Migração', "php artisan migrate\n● Execute para criar a tabela no banco de dados"],
+            ['', ''], // Linha vazia que servirá como separador
             ['Seeder', "php artisan db:seed --class=" . $model . "Seeder\n● Execute para popular a tabela com dados iniciais"],
+            ['', ''], // Linha vazia que servirá como separador
             ['Documentação API', "php artisan l5-swagger:generate\n● Execute para gerar/atualizar a documentação da API"]
-        ]);
+        ];
+
+        $this->table(['Tarefa', 'Comando / Instruções'], $tableData);
 
         $this->line('');
         $this->comment('Acesse a documentação em: /api/documentation');
