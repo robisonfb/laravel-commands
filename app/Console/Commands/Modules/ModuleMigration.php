@@ -39,7 +39,7 @@ class ModuleMigration extends GeneratorCommand
     /**
      * Executa o comando para gerar a migração
      *
-     * @return void
+     * @return int
      */
     public function handle()
     {
@@ -56,7 +56,7 @@ class ModuleMigration extends GeneratorCommand
         // Verifica se o arquivo já existe
         if ($this->alreadyExists($this->getNameInput())) {
             $this->error($this->type . ' already exists!');
-            return false;
+            return 1; // Código de erro
         }
 
         // Cria os diretórios se necessário
@@ -67,7 +67,7 @@ class ModuleMigration extends GeneratorCommand
 
         $this->info($this->type . ' created successfully.');
 
-        return true;
+        return 0; // Código de sucesso
     }
 
     /**
@@ -146,6 +146,9 @@ class ModuleMigration extends GeneratorCommand
 
         // Substitui o nome do modelo em minúsculas
         $stub = str_replace('{modelNameLowerCase}', Str::lower($modelName), $stub);
+
+        // Substitui o nome plural do modelo em snake_case (para nome de tabela)
+        $stub = str_replace('{modelNamePluralSnakeCase}', $tableName, $stub);
 
         // Substitui a classe de migração
         $className = 'Create' . Str::studly($tableName) . 'Table';

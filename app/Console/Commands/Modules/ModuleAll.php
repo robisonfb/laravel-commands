@@ -65,14 +65,14 @@ class ModuleAll extends Command
 
         // Criar a Migration
         $this->info('Criando Migration...');
-        $migrationCommand = 'make:migration create_' . Str::plural(Str::snake($model)) . '_table';
+        $migrationCommand = 'module:migration ' . $model;
         $runMigration = Artisan::call($migrationCommand);
         if ($runMigration !== 0) {
             $this->error('Falha ao criar a Migration');
             return 1;
         }
 
-        // Criar a Factory
+        // // Criar a Factory
         $this->info('Criando Factory...');
         $factoryCommand = 'module:factory ' . $model;
         $runFactory = Artisan::call($factoryCommand);
@@ -81,14 +81,14 @@ class ModuleAll extends Command
             return 1;
         }
 
-        // Criar o Seeder
-        $this->info('Criando Seeder...');
-        $seederCommand = 'module:seeder ' . $model;
-        $runSeeder = Artisan::call($seederCommand);
-        if ($runSeeder !== 0) {
-            $this->error('Falha ao criar o Seeder');
-            return 1;
-        }
+        // // Criar o Seeder
+        // $this->info('Criando Seeder...');
+        // $seederCommand = 'module:seeder ' . $model;
+        // $runSeeder = Artisan::call($seederCommand);
+        // if ($runSeeder !== 0) {
+        //     $this->error('Falha ao criar o Seeder');
+        //     return 1;
+        // }
 
         // Criar o Controller
         $this->info('Criando Controller...');
@@ -99,40 +99,40 @@ class ModuleAll extends Command
             return 1;
         }
 
-        // Criar os Requests
-        $this->info('Criando Store Request...');
-        $storeRequestCommand = 'module:store-request ' . $model;
-        $runStoreRequest = Artisan::call($storeRequestCommand);
-        if ($runStoreRequest !== 0) {
-            $this->error('Falha ao criar o Store Request');
-            return 1;
-        }
+        // // Criar os Requests
+        // $this->info('Criando Store Request...');
+        // $storeRequestCommand = 'module:store-request ' . $model;
+        // $runStoreRequest = Artisan::call($storeRequestCommand);
+        // if ($runStoreRequest !== 0) {
+        //     $this->error('Falha ao criar o Store Request');
+        //     return 1;
+        // }
 
-        $this->info('Criando Update Request...');
-        $updateRequestCommand = 'module:update-request ' . $model;
-        $runUpdateRequest = Artisan::call($updateRequestCommand);
-        if ($runUpdateRequest !== 0) {
-            $this->error('Falha ao criar o Update Request');
-            return 1;
-        }
+        // $this->info('Criando Update Request...');
+        // $updateRequestCommand = 'module:update-request ' . $model;
+        // $runUpdateRequest = Artisan::call($updateRequestCommand);
+        // if ($runUpdateRequest !== 0) {
+        //     $this->error('Falha ao criar o Update Request');
+        //     return 1;
+        // }
 
-        // Criar o Resource
-        $this->info('Criando Resource...');
-        $resourceCommand = 'module:resource ' . $model;
-        $runResource = Artisan::call($resourceCommand);
-        if ($runResource !== 0) {
-            $this->error('Falha ao criar o Resource');
-            return 1;
-        }
+        // // Criar o Resource
+        // $this->info('Criando Resource...');
+        // $resourceCommand = 'module:resource ' . $model;
+        // $runResource = Artisan::call($resourceCommand);
+        // if ($runResource !== 0) {
+        //     $this->error('Falha ao criar o Resource');
+        //     return 1;
+        // }
 
-        // Criar a Collection
-        $this->info('Criando Collection...');
-        $collectionCommand = 'module:collection ' . $model;
-        $runCollection = Artisan::call($collectionCommand);
-        if ($runCollection !== 0) {
-            $this->error('Falha ao criar a Collection');
-            return 1;
-        }
+        // // Criar a Collection
+        // $this->info('Criando Collection...');
+        // $collectionCommand = 'module:collection ' . $model;
+        // $runCollection = Artisan::call($collectionCommand);
+        // if ($runCollection !== 0) {
+        //     $this->error('Falha ao criar a Collection');
+        //     return 1;
+        // }
 
         $this->info('---------------------------------');
         $this->info('✅ Módulo criado com sucesso!');
