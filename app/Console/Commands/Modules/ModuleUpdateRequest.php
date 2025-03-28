@@ -13,7 +13,7 @@ class ModuleUpdateRequest extends GeneratorCommand
      * @var string
      */
     protected $signature = 'module:update-request
-                            {name: Nome do modelo para o qual o controlador será gerado com base no template}
+                            {name : Nome do modelo para o qual o controlador será gerado com base no template}
                             ';
 
     /**

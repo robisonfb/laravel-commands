@@ -13,7 +13,7 @@ class ModulePolicy extends GeneratorCommand
      * @var string
      */
     protected $signature = 'module:policy
-                            {name: Nome do modelo para o qual o controlador será gerado com base no template}
+                            {name : Nome do modelo para o qual o controlador será gerado com base no template}
                             ';
 
     /**
