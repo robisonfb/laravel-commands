@@ -36,8 +36,8 @@ class {modelName}Factory extends Factory
             'price' => $this->faker->randomFloat(2, 10, 1000),
             'stock' => $this->faker->numberBetween(0, 100),
             'files' => json_encode([
-                'products/' . $this->faker->uuid . '.jpg',
-                'products/' . $this->faker->uuid . '.jpg',
+                '{modelNamePluralLowerCase}/' . $this->faker->uuid . '.jpg',
+                '{modelNamePluralLowerCase}/' . $this->faker->uuid . '.jpg',
             ]),
             'user_id' => function () {
                 return User::factory()->create()->id;

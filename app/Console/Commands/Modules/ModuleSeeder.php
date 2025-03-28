@@ -1,9 +1,9 @@
 <?php
 /**
- * Classe para geração automática de factories de módulos
+ * Classe para geração automática de seeders de módulos
  *
  * Esta classe estende o GeneratorCommand do Laravel para criar
- * factories personalizadas a partir de stubs definidos.
+ * seeders personalizados a partir de stubs definidos.
  */
 
 namespace App\Console\Commands\Modules;
@@ -11,14 +11,14 @@ namespace App\Console\Commands\Modules;
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Str;
 
-class ModuleFactory extends GeneratorCommand
+class ModuleSeeder extends GeneratorCommand
 {
     /**
      * Define a assinatura do comando no Artisan
      *
      * @var string
      */
-    protected $signature = 'module:factory
+    protected $signature = 'module:seeder
                             {name : The name of the model.}
                             ';
 
@@ -27,17 +27,17 @@ class ModuleFactory extends GeneratorCommand
      *
      * @var string
      */
-    protected $description = 'Gera uma factory para o módulo especificado';
+    protected $description = 'Gera um seeder para o módulo especificado';
 
     /**
      * O tipo de classe que está sendo gerada.
      *
      * @var string
      */
-    protected $type = 'Factory';
+    protected $type = 'Seeder';
 
     /**
-     * Executa o comando para gerar a factory
+     * Executa o comando para gerar o seeder
      *
      * @return int
      */
@@ -53,42 +53,42 @@ class ModuleFactory extends GeneratorCommand
     }
 
     /**
-     * Retorna o caminho para o arquivo stub da factory
+     * Retorna o caminho para o arquivo stub do seeder
      *
      * @return string
      */
     protected function getStub()
     {
-        return app_path() . '/Console/Commands/Modules/Stubs/ModuleFactory.stub';
+        return app_path() . '/Console/Commands/Modules/Stubs/ModuleSeeder.stub';
     }
 
     /**
-     * Define o namespace padrão para a factory gerada
+     * Define o namespace padrão para o seeder gerado
      *
      * @param string $rootNamespace
      * @return string
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\\Database\\Factories';
+        return $rootNamespace . '\\Database\\Seeders';
     }
 
     /**
-     * Obter o caminho completo do arquivo para a factory.
+     * Obter o caminho completo do arquivo para o seeder.
      *
      * @param string $name
      * @return string
      */
     protected function getPath($name)
     {
-        $name = str_replace('App\\Database\\Factories\\', '', $name);
+        $name = str_replace('App\\Database\\Seeders\\', '', $name);
         $name = str_replace('\\', '/', $name);
 
-        return database_path('factories/' . $name . '.php');
+        return database_path('seeders/' . $name . '.php');
     }
 
     /**
-     * Qualifica completamente o nome da classe da factory
+     * Qualifica completamente o nome da classe do seeder
      *
      * @param string $name
      * @return string
@@ -104,15 +104,15 @@ class ModuleFactory extends GeneratorCommand
             return $name;
         }
 
-        if (!Str::contains(Str::lower($name), 'factory')) {
-            $name .= 'Factory';
+        if (!Str::contains(Str::lower($name), 'seeder')) {
+            $name .= 'Seeder';
         }
 
         return $this->getDefaultNamespace(trim($rootNamespace, '\\')) . '\\' . $name;
     }
 
     /**
-     * Constrói o conteúdo da classe da factory
+     * Constrói o conteúdo da classe do seeder
      *
      * @param string $name
      * @return string
@@ -138,9 +138,9 @@ class ModuleFactory extends GeneratorCommand
     {
         $modelName = $this->getNameInput();
 
-        // Remove 'Factory' do final se estiver presente
-        if (Str::endsWith($modelName, 'Factory')) {
-            $modelName = Str::replaceLast('Factory', '', $modelName);
+        // Remove 'Seeder' do final se estiver presente
+        if (Str::endsWith($modelName, 'Seeder')) {
+            $modelName = Str::replaceLast('Seeder', '', $modelName);
         }
 
         // Substitui o nome do modelo

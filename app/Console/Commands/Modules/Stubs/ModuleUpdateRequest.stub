@@ -16,12 +16,14 @@ class Update{modelName}Request extends FormRequest
      */
     public function authorize()
     {
+        // Obtém o {modelNameLowerCase} sendo atualizado
+        $model = $this->route('{modelNameLowerCase}');
+
         // Opção 1: Verificar através do Gate/Policy
-        // return Gate::allows('update', ${modelNameLowerCase});
+        // return Gate::allows('update', $model);
 
         // Opção 2: Verificação simplificada
-        // ${modelNameLowerCase} = {modelName}::findOrFail($this->route('{modelNameLowerCase}'));
-        // return auth()->user()->can('update', ${modelNameLowerCase});
+        // return auth()->user()->can('update', $model);
 
         // Alternativa: Permitir todos os usuários autenticados
         return true;
@@ -34,22 +36,19 @@ class Update{modelName}Request extends FormRequest
      */
     public function rules()
     {
+        $modelId = $this->route('{modelNameLowerCase}')->id;
+
         return [
             // Adicione suas regras aqui. Exemplos:
             'name' => 'sometimes|required|string|max:255',
-            'description' => 'sometimes|nullable|string',
+            'description' => 'nullable|string',
             'status' => ['sometimes', 'required', Rule::in(['ativo', 'inativo', 'pendente'])],
 
-            // Exemplo com validação unique que ignora o registro atual
-            'email' => [
-                'sometimes',
-                'required',
-                'email',
-                Rule::unique('users', 'email')->ignore($this->route('{modelNameLowerCase}'))
-            ],
+            // Exemplo com validação unique, ignorando o registro atual
+            'email' => ['sometimes', 'required', 'email', Rule::unique('users', 'email')->ignore($modelId)],
 
             // Exemplo para relacionamentos
-            'category_id' => 'sometimes|nullable|exists:categories,id',
+            'category_id' => 'sometimes|required|exists:categories,id',
 
             // Exemplo para arrays
             'tags' => 'sometimes|array',
@@ -58,10 +57,6 @@ class Update{modelName}Request extends FormRequest
             // Exemplo para arquivos
             'files' => 'sometimes|array',
             'files.*' => 'file|mimes:jpeg,png,jpg,gif,pdf|max:5120',
-
-            // Exemplo para remoção de arquivos
-            'remove_files' => 'sometimes|array',
-            'remove_files.*' => 'string',
         ];
     }
 
@@ -79,7 +74,6 @@ class Update{modelName}Request extends FormRequest
             'category_id' => __('messages.category'),
             'tags' => __('messages.tags'),
             'files' => __('messages.files'),
-            'remove_files' => __('messages.remove_files'),
         ];
     }
 
@@ -91,6 +85,7 @@ class Update{modelName}Request extends FormRequest
     public function messages()
     {
         return [
+            'name.required' => __('messages.name_required'),
             'status.in' => __('messages.status_invalid_option'),
             'category_id.exists' => __('messages.category_not_found'),
             'files.*.mimes' => __('messages.file_invalid_type'),
@@ -109,6 +104,7 @@ class Update{modelName}Request extends FormRequest
         if ($this->has('name')) {
             $this->merge([
                 'slug' => \Illuminate\Support\Str::slug($this->name),
+                // Não atribuímos user_id na atualização para não sobrescrever o usuário original
             ]);
         }
     }

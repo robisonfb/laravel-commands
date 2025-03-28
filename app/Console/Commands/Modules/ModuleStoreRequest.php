@@ -1,9 +1,9 @@
 <?php
 /**
- * Classe para geração automática de factories de módulos
+ * Classe para geração automática de requests de store para módulos
  *
  * Esta classe estende o GeneratorCommand do Laravel para criar
- * factories personalizadas a partir de stubs definidos.
+ * requests personalizados a partir de stubs definidos.
  */
 
 namespace App\Console\Commands\Modules;
@@ -11,14 +11,14 @@ namespace App\Console\Commands\Modules;
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Str;
 
-class ModuleFactory extends GeneratorCommand
+class ModuleStoreRequest extends GeneratorCommand
 {
     /**
      * Define a assinatura do comando no Artisan
      *
      * @var string
      */
-    protected $signature = 'module:factory
+    protected $signature = 'module:store-request
                             {name : The name of the model.}
                             ';
 
@@ -27,17 +27,17 @@ class ModuleFactory extends GeneratorCommand
      *
      * @var string
      */
-    protected $description = 'Gera uma factory para o módulo especificado';
+    protected $description = 'Gera uma classe de request para store do módulo especificado';
 
     /**
      * O tipo de classe que está sendo gerada.
      *
      * @var string
      */
-    protected $type = 'Factory';
+    protected $type = 'Store Request';
 
     /**
-     * Executa o comando para gerar a factory
+     * Executa o comando para gerar o request
      *
      * @return int
      */
@@ -53,42 +53,28 @@ class ModuleFactory extends GeneratorCommand
     }
 
     /**
-     * Retorna o caminho para o arquivo stub da factory
+     * Retorna o caminho para o arquivo stub do request
      *
      * @return string
      */
     protected function getStub()
     {
-        return app_path() . '/Console/Commands/Modules/Stubs/ModuleFactory.stub';
+        return app_path() . '/Console/Commands/Modules/Stubs/ModuleStoreRequest.stub';
     }
 
     /**
-     * Define o namespace padrão para a factory gerada
+     * Define o namespace padrão para o request gerado
      *
      * @param string $rootNamespace
      * @return string
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\\Database\\Factories';
+        return $rootNamespace . '\\Http\\Requests';
     }
 
     /**
-     * Obter o caminho completo do arquivo para a factory.
-     *
-     * @param string $name
-     * @return string
-     */
-    protected function getPath($name)
-    {
-        $name = str_replace('App\\Database\\Factories\\', '', $name);
-        $name = str_replace('\\', '/', $name);
-
-        return database_path('factories/' . $name . '.php');
-    }
-
-    /**
-     * Qualifica completamente o nome da classe da factory
+     * Qualifica completamente o nome da classe do request
      *
      * @param string $name
      * @return string
@@ -104,15 +90,16 @@ class ModuleFactory extends GeneratorCommand
             return $name;
         }
 
-        if (!Str::contains(Str::lower($name), 'factory')) {
-            $name .= 'Factory';
+        // Adiciona o sufixo "StoreRequest" se ainda não existir
+        if (!Str::endsWith($name, 'StoreRequest')) {
+            $name = $name . 'StoreRequest';
         }
 
         return $this->getDefaultNamespace(trim($rootNamespace, '\\')) . '\\' . $name;
     }
 
     /**
-     * Constrói o conteúdo da classe da factory
+     * Constrói o conteúdo da classe do request
      *
      * @param string $name
      * @return string
@@ -138,9 +125,9 @@ class ModuleFactory extends GeneratorCommand
     {
         $modelName = $this->getNameInput();
 
-        // Remove 'Factory' do final se estiver presente
-        if (Str::endsWith($modelName, 'Factory')) {
-            $modelName = Str::replaceLast('Factory', '', $modelName);
+        // Remove 'StoreRequest' do final se estiver presente
+        if (Str::endsWith($modelName, 'StoreRequest')) {
+            $modelName = Str::replaceLast('StoreRequest', '', $modelName);
         }
 
         // Substitui o nome do modelo
