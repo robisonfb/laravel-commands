@@ -7,11 +7,11 @@ use Illuminate\Support\Str;
 
 class ModulePolicy extends GeneratorCommand
 {
-    protected $signature = 'module:policy 
+    protected $signature = 'module:policy
                             {name : The name of the model.}
                             ';
 
-    protected $description = 'Command description';
+    protected $description = 'Gera uma policy para o módulo especificado';
 
     public function handle()
     {
@@ -58,9 +58,16 @@ class ModulePolicy extends GeneratorCommand
 
     protected function replaceModel(&$stub)
     {
-        $model = $this->getNameInput();
-        $stub  = str_replace('DummyModel', $model, $stub);
-        $stub  = str_replace($model . 'Object', Str::lower($model), $stub);
+        $modelName = $this->getNameInput();
+
+        // Substitui o nome do modelo
+        $stub = str_replace('{modelName}', $modelName, $stub);
+
+        // Substitui o nome plural do modelo em minúsculas
+        $stub = str_replace('{modelNamePluralLowerCase}', Str::plural(Str::lower($modelName)), $stub);
+
+        // Substitui o nome do modelo em minúsculas
+        $stub = str_replace('{modelNameLowerCase}', Str::lower($modelName), $stub);
 
         return $this;
     }
