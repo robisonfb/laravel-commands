@@ -28,8 +28,8 @@ class DummyClass extends Controller
 
             // Coluna de classificação
             $sortBy = $request->query('sort_by', 'created_at');
-            $validSortOrders = ['created_at', 'updated_at']; // Adicione outras colunas para ordens de classificação
-            if (!in_array(strtolower($sortBy), $validSortOrders)) {
+            $validSortColumns = ['created_at', 'updated_at']; // Adicione outras colunas para ordens de classificação
+            if (!in_array(strtolower($sortBy), $validSortColumns)) {
                 $sortBy = 'created_at';
             }
 
@@ -40,16 +40,14 @@ class DummyClass extends Controller
                 $sortOrder = 'desc';
             }
 
+            // Chave de cache única baseada nos parâmetros de consulta
+            $cacheKey = "{modelNamePluralLowerCase}_page{$perPage}_{$sortBy}_{$sortOrder}";
+
             // Tenta encontrar a coleção de {modelNamePluralLowerCase} usando o cache
-            ${modelNamePluralLowerCase} = Cache::remember('{modelNamePluralLowerCase}', 3600, function () use ($perPage, $sortBy, $sortOrder) {
-                return {modelName}::orderBy($sortBy, $sortOrder)->paginate($perPage);
+            ${modelNamePluralLowerCase} = Cache::remember($cacheKey, 3600, function () use ($perPage, $sortBy, $sortOrder) {
+                $query = {modelName}::query();
+                return $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
             });
-
-            // Inicia a consulta
-            $query = {modelName}::query();
-
-            // Aplicar filtros
-            ${modelNamePluralLowerCase} = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
 
             // Verificar se algum resultado foi encontrado
             if (${modelNamePluralLowerCase}->isEmpty()) {
@@ -96,7 +94,7 @@ class DummyClass extends Controller
             DB::commit();
 
             // Limpar cache após criar um {modelNameLowerCase}
-            Cache::forget('{modelNamePluralLowerCase}');
+            Cache::flush('{modelNamePluralLowerCase}*');
 
             return (new {modelName}Resource(${modelNameLowerCase}))
                 ->response()
@@ -172,7 +170,7 @@ class DummyClass extends Controller
             }
 
             // Remover arquivos específicos se solicitado
-            if ($request->has('remove_files') && is_array($request->remove_files)) {
+            if ($request->has('remove_files') && is_array($request->input('remove_files'))) {
                 $existingFiles = !empty(${modelNameLowerCase}->files)
                     ? json_decode(${modelNameLowerCase}->files, true)
                     : [];
@@ -182,7 +180,7 @@ class DummyClass extends Controller
                     $remainingFiles = [];
 
                     foreach ($existingFiles as $file) {
-                        if (in_array($file, $request->remove_files)) {
+                        if (in_array($file, $request->input('remove_files'))) {
                             $filesToRemove[] = $file;
                         } else {
                             $remainingFiles[] = $file;
@@ -206,9 +204,11 @@ class DummyClass extends Controller
 
             // Limpar cache
             Cache::forget('{modelNameLowerCase}_' . $id);
-            Cache::forget('{modelNamePluralLowerCase}');
+            Cache::flush('{modelNamePluralLowerCase}*');
 
-            return new {modelName}Resource(${modelNameLowerCase});
+            return (new {modelName}Resource(${modelNameLowerCase}))
+                ->response()
+                ->setStatusCode(Response::HTTP_OK);
         } catch (ModelNotFoundException $e) {
             DB::rollBack();
             return response()->json([
@@ -250,7 +250,7 @@ class DummyClass extends Controller
 
             // Limpar cache
             Cache::forget('{modelNameLowerCase}_' . $id);
-            Cache::forget('{modelNamePluralLowerCase}');
+            Cache::flush('{modelNamePluralLowerCase}*');
 
             return response()->json(null, Response::HTTP_NO_CONTENT);
         } catch (ModelNotFoundException $e) {
@@ -285,7 +285,7 @@ class DummyClass extends Controller
                 'per_page' => 'nullable|integer|min:1|max:100'
             ]);
 
-            $query = $request->query('q');
+            $query = strtolower($request->query('q'));
             $column = strtolower($request->query('column'));
             $perPage = $request->query('per_page', 15);
 
@@ -306,6 +306,13 @@ class DummyClass extends Controller
             ${modelNameLowerCase}Query = {modelName}::query();
 
             if ($column !== 'all') {
+                // Verifica se a coluna solicitada é válida (medida de segurança para SQL Injection)
+                if (!in_array($column, Schema::getColumnListing('{modelNamePluralLowerCase}'))) {
+                    return response()->json([
+                        'message' => __('messages.invalid_column')
+                    ], Response::HTTP_BAD_REQUEST);
+                }
+
                 // Busca na coluna específica usando LOWER para case insensitivity
                 ${modelNameLowerCase}Query->whereRaw("LOWER({$column}) LIKE ?", ['%' . $query . '%']);
             } else {
@@ -318,7 +325,9 @@ class DummyClass extends Controller
 
                 ${modelNameLowerCase}Query->where(function($q) use ($searchableColumns, $query) {
                     foreach ($searchableColumns as $col) {
-                        $q->orWhereRaw("LOWER({$col}) LIKE ?", ['%' . $query . '%']);
+                        if (in_array($col, Schema::getColumnListing('{modelNamePluralLowerCase}'))) {
+                            $q->orWhereRaw("LOWER({$col}) LIKE ?", ['%' . $query . '%']);
+                        }
                     }
                 });
             }
@@ -333,7 +342,9 @@ class DummyClass extends Controller
                 ], Response::HTTP_OK);
             }
 
-            return new {modelName}Collection(${modelNamePluralLowerCase});
+            return (new {modelName}Collection(${modelNamePluralLowerCase}))
+                ->response()
+                ->setStatusCode(Response::HTTP_OK);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'message' => __('messages.validation_error'),
@@ -347,5 +358,4 @@ class DummyClass extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 }
