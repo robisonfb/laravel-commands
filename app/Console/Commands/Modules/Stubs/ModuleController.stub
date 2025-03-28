@@ -12,44 +12,44 @@ use Illuminate\Support\Facades\{Cache, DB, Log, Schema};
 
 class DummyClass extends Controller
 {
-
     /**
      * Exibe uma listagem de {modelNamePluralLowerCase}.
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-
     public function index(Request $request): JsonResponse
     {
         try {
-            // Obtém parâmetros de consulta para filtragem e paginação
-            $perPage = $request->query('per_page', 15);
+            // Validar parâmetros de paginação e ordenação
+            $validated = $request->validate([
+                'per_page' => 'nullable|integer|min:1|max:100',
+                'sort_by' => 'nullable|string',
+                'sort_order' => 'nullable|string|in:asc,desc'
+            ]);
 
-            // Coluna de classificação
-            $sortBy = $request->query('sort_by', 'created_at');
-            $validSortColumns = ['created_at', 'updated_at']; // Adicione outras colunas para ordens de classificação
+            // Configurar parâmetros de paginação
+            $perPage = $validated['per_page'] ?? 15;
+
+            // Configurar parâmetros de ordenação
+            $validSortColumns = ['created_at', 'updated_at', 'id']; // Colunas permitidas
+            $sortBy = $validated['sort_by'] ?? 'created_at';
             if (!in_array(strtolower($sortBy), $validSortColumns)) {
                 $sortBy = 'created_at';
             }
 
-            // Ordem de classificação
-            $sortOrder = $request->query('sort_order', 'desc');
-            $validSortOrders = ['asc', 'desc'];
-            if (!in_array(strtolower($sortOrder), $validSortOrders)) {
-                $sortOrder = 'desc';
-            }
+            $sortOrder = $validated['sort_order'] ?? 'desc';
 
-            // Chave de cache única baseada nos parâmetros de consulta
-            $cacheKey = "{modelNamePluralLowerCase}_page{$perPage}_{$sortBy}_{$sortOrder}";
+            // Chave de cache única baseada nos parâmetros
+            $page = $request->query('page', 1);
+            $cacheKey = "{modelNamePluralLowerCase}_page_{$page}_perpage_{$perPage}_sort_{$sortBy}_order_{$sortOrder}";
 
-            // Tenta encontrar a coleção de {modelNamePluralLowerCase} usando o cache
+            // Buscar resultados do cache ou gerar novos
             ${modelNamePluralLowerCase} = Cache::remember($cacheKey, 3600, function () use ($perPage, $sortBy, $sortOrder) {
-                $query = {modelName}::query();
-                return $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
+                return {modelName}::orderBy($sortBy, $sortOrder)->paginate($perPage);
             });
 
-            // Verificar se algum resultado foi encontrado
+            // Se não houver resultados
             if (${modelNamePluralLowerCase}->isEmpty()) {
                 return response()->json([
                     'message' => __('No {modelNamePluralLowerCase} results found'),
@@ -57,10 +57,16 @@ class DummyClass extends Controller
                 ], Response::HTTP_OK);
             }
 
-            // Retorna coleção de recursos
+            // Retornar coleção de recursos
             return (new {modelName}Collection(${modelNamePluralLowerCase}))
                 ->response()
                 ->setStatusCode(Response::HTTP_OK);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => __('Invalid pagination or sorting parameters'),
+                'errors' => $e->errors()
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (\Exception $e) {
             Log::error('Erro ao buscar {modelNamePluralLowerCase}: ' . $e->getMessage());
             return response()->json([
@@ -83,26 +89,41 @@ class DummyClass extends Controller
         try {
             $validatedData = $request->validated();
 
-            // Armazena múltiplos arquivos (se existirem)
+            // Processar arquivos
             if ($request->hasFile('files')) {
-                $imagePaths = store_files($request, 'files', '{modelNamePluralLowerCase}', 'public');
-                $validatedData['files'] = json_encode($imagePaths);
+                try {
+                    $imagePaths = store_files($request, 'files', '{modelNamePluralLowerCase}', 'public');
+                    $validatedData['files'] = json_encode($imagePaths);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    Log::error('Erro ao processar arquivos: ' . $e->getMessage());
+                    return response()->json([
+                        'message' => __('Failed to process uploaded files'),
+                        'error' => $e->getMessage()
+                    ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                }
             }
 
+            // Criar registro
             ${modelNameLowerCase} = {modelName}::create($validatedData);
+
+            // Carregar relacionamentos, se necessário
+            // ${modelNameLowerCase}->load(['relationship1', 'relationship2']);
 
             DB::commit();
 
-            // Limpar cache após criar um {modelNameLowerCase}
-            Cache::flush('{modelNamePluralLowerCase}*');
+            // Limpar caches
+            $this->clearRelatedCaches();
 
+            // Resposta
             return (new {modelName}Resource(${modelNameLowerCase}))
                 ->response()
                 ->setStatusCode(Response::HTTP_CREATED);
+
         } catch (\Exception $e) {
             DB::rollBack();
-
             Log::error('Erro ao criar {modelNameLowerCase}: ' . $e->getMessage());
+
             return response()->json([
                 'message' => __('Failed to create {modelNameLowerCase}'),
                 'error' => $e->getMessage()
@@ -119,14 +140,25 @@ class DummyClass extends Controller
     public function show($id): JsonResponse
     {
         try {
-            //Tenta encontrar o {modelNameLowerCase} usando o cache
+            // Validar ID
+            if (!is_numeric($id) || $id <= 0) {
+                return response()->json([
+                    'message' => __('Invalid ID format')
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            // Buscar do cache ou do banco
             ${modelNameLowerCase} = Cache::remember('{modelNameLowerCase}_' . $id, 3600, function () use ($id) {
+                // Aqui podemos incluir relacionamentos com 'with' se necessário
+                // return {modelName}::with(['relationship1', 'relationship2'])->findOrFail($id);
                 return {modelName}::findOrFail($id);
             });
 
+            // Retornar recurso
             return (new {modelName}Resource(${modelNameLowerCase}))
                 ->response()
                 ->setStatusCode(Response::HTTP_OK);
+
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'message' => __('{modelName} not found')
@@ -152,63 +184,90 @@ class DummyClass extends Controller
         DB::beginTransaction();
 
         try {
+            // Validar ID
+            if (!is_numeric($id) || $id <= 0) {
+                return response()->json([
+                    'message' => __('Invalid ID format')
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            // Buscar registro
             ${modelNameLowerCase} = {modelName}::findOrFail($id);
             $validatedData = $request->validated();
 
-            // Armazena múltiplos arquivos (se existirem)
+            // Processar arquivos novos
             if ($request->hasFile('files')) {
-                $newFilePaths = store_files($request, 'files', '{modelNamePluralLowerCase}', 'public');
+                try {
+                    $newFilePaths = store_files($request, 'files', '{modelNamePluralLowerCase}', 'public');
 
-                // Combinar com arquivos existentes (se houver)
-                $existingFiles = [];
-                if (!empty(${modelNameLowerCase}->files)) {
-                    $existingFiles = json_decode(${modelNameLowerCase}->files, true) ?: [];
+                    // Mesclar com arquivos existentes
+                    $existingFiles = !empty(${modelNameLowerCase}->files)
+                        ? json_decode(${modelNameLowerCase}->files, true) ?: []
+                        : [];
+
+                    $allFiles = array_merge($existingFiles, $newFilePaths);
+                    $validatedData['files'] = json_encode($allFiles);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    Log::error('Erro ao processar arquivos: ' . $e->getMessage());
+                    return response()->json([
+                        'message' => __('Failed to process uploaded files'),
+                        'error' => $e->getMessage()
+                    ], Response::HTTP_UNPROCESSABLE_ENTITY);
                 }
-
-                $allFiles = array_merge($existingFiles, $newFilePaths);
-                $validatedData['files'] = json_encode($allFiles);
             }
 
-            // Remover arquivos específicos se solicitado
-            if ($request->has('remove_files') && is_array($request->input('remove_files'))) {
-                $existingFiles = !empty(${modelNameLowerCase}->files)
-                    ? json_decode(${modelNameLowerCase}->files, true)
-                    : [];
+            // Remover arquivos específicos
+            if ($request->has('remove_files')) {
+                try {
+                    $filesToRemove = $request->input('remove_files');
 
-                if (!empty($existingFiles)) {
-                    $filesToRemove = [];
-                    $remainingFiles = [];
+                    if (!is_array($filesToRemove)) {
+                        throw new \Exception('O campo remove_files deve ser um array');
+                    }
 
-                    foreach ($existingFiles as $file) {
-                        if (in_array($file, $request->input('remove_files'))) {
-                            $filesToRemove[] = $file;
-                        } else {
-                            $remainingFiles[] = $file;
+                    $existingFiles = !empty(${modelNameLowerCase}->files)
+                        ? json_decode(${modelNameLowerCase}->files, true) ?: []
+                        : [];
+
+                    if (!empty($existingFiles)) {
+                        $remainingFiles = array_diff($existingFiles, $filesToRemove);
+
+                        // Excluir arquivos físicos
+                        if (!empty($filesToRemove)) {
+                            delete_files($filesToRemove);
                         }
-                    }
 
-                    // Excluir os arquivos físicos
-                    if (!empty($filesToRemove)) {
-                        delete_files($filesToRemove);
+                        // Atualizar lista de arquivos
+                        $validatedData['files'] = json_encode(array_values($remainingFiles));
                     }
-
-                    // Atualizar a lista de arquivos
-                    $validatedData['files'] = json_encode($remainingFiles);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    Log::error('Erro ao remover arquivos: ' . $e->getMessage());
+                    return response()->json([
+                        'message' => __('Failed to remove files'),
+                        'error' => $e->getMessage()
+                    ], Response::HTTP_UNPROCESSABLE_ENTITY);
                 }
             }
 
-            // Atualizar o {modelNameLowerCase}
+            // Atualizar registro
             ${modelNameLowerCase}->update($validatedData);
+
+            // Recarregar o modelo com dados atualizados
+            ${modelNameLowerCase}->refresh();
 
             DB::commit();
 
-            // Limpar cache
+            // Limpar caches
             Cache::forget('{modelNameLowerCase}_' . $id);
-            Cache::flush('{modelNamePluralLowerCase}*');
+            $this->clearRelatedCaches();
 
+            // Resposta
             return (new {modelName}Resource(${modelNameLowerCase}))
                 ->response()
                 ->setStatusCode(Response::HTTP_OK);
+
         } catch (ModelNotFoundException $e) {
             DB::rollBack();
             return response()->json([
@@ -216,8 +275,8 @@ class DummyClass extends Controller
             ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
             DB::rollBack();
-
             Log::error('Erro ao atualizar {modelNameLowerCase}: ' . $e->getMessage());
+
             return response()->json([
                 'message' => __('Failed to update {modelNameLowerCase}'),
                 'error' => $e->getMessage()
@@ -236,23 +295,41 @@ class DummyClass extends Controller
         DB::beginTransaction();
 
         try {
-            ${modelNameLowerCase} = {modelName}::findOrFail($id);
-
-            // Excluir arquivos adicionais se existirem
-            if (!empty(${modelNameLowerCase}->files)) {
-                $files = json_decode(${modelNameLowerCase}->files, true) ?: [];
-                delete_files($files);
+            // Validar ID
+            if (!is_numeric($id) || $id <= 0) {
+                return response()->json([
+                    'message' => __('Invalid ID format')
+                ], Response::HTTP_BAD_REQUEST);
             }
 
+            // Buscar registro
+            ${modelNameLowerCase} = {modelName}::findOrFail($id);
+
+            // Excluir arquivos físicos se existirem
+            if (!empty(${modelNameLowerCase}->files)) {
+                try {
+                    $files = json_decode(${modelNameLowerCase}->files, true) ?: [];
+                    if (!empty($files)) {
+                        delete_files($files);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Erro ao excluir arquivos físicos: ' . $e->getMessage());
+                    // Continua a execução mesmo com erro nos arquivos
+                }
+            }
+
+            // Excluir registro
             ${modelNameLowerCase}->delete();
 
             DB::commit();
 
-            // Limpar cache
+            // Limpar caches
             Cache::forget('{modelNameLowerCase}_' . $id);
-            Cache::flush('{modelNamePluralLowerCase}*');
+            $this->clearRelatedCaches();
 
+            // Retornar resposta sem conteúdo
             return response()->json(null, Response::HTTP_NO_CONTENT);
+
         } catch (ModelNotFoundException $e) {
             DB::rollBack();
             return response()->json([
@@ -260,8 +337,8 @@ class DummyClass extends Controller
             ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
             DB::rollBack();
-
             Log::error('Erro ao excluir {modelNameLowerCase}: ' . $e->getMessage());
+
             return response()->json([
                 'message' => __('Failed to delete {modelNameLowerCase}'),
                 'error' => $e->getMessage()
@@ -270,92 +347,61 @@ class DummyClass extends Controller
     }
 
     /**
-     * Pesquisa {modelNamePluralLowerCase} por qualquer coluna.
+     * Limpa os caches relacionados a listagens de {modelNamePluralLowerCase}.
+     * Verifica automaticamente o driver de cache e usa o método mais apropriado.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return void
      */
-    public function search(Request $request): JsonResponse
+    private function clearRelatedCaches(): void
     {
-        try {
-            // Validar parâmetros de busca
-            $request->validate([
-                'q' => 'required|string|min:1',
-                'column' => 'required|string',
-                'per_page' => 'nullable|integer|min:1|max:100'
-            ]);
+        $driver = config('cache.default');
+        $supportsTags = in_array($driver, ['redis', 'memcached']);
 
-            $query = strtolower($request->query('q'));
-            $column = strtolower($request->query('column'));
-            $perPage = $request->query('per_page', 15);
-
-            // Obtém as colunas disponíveis na tabela
-            $availableColumns = Schema::getColumnListing('{modelNamePluralLowerCase}');
-
-            // Adiciona opção especial 'all'
-            $availableColumns[] = 'all';
-
-            // Verifica se a coluna solicitada está disponível
-            if (!in_array($column, $availableColumns)) {
-                return response()->json([
-                    'message' => __('Invalid column'),
-                    'available_columns' => $availableColumns
-                ], Response::HTTP_BAD_REQUEST);
+        if ($supportsTags) {
+            // Para drivers que suportam tags (Redis, Memcached)
+            try {
+                Cache::tags(['{modelNamePluralLowerCase}'])->flush();
+                return;
+            } catch (\Exception $e) {
+                // Fallback caso tags não estejam configuradas corretamente
+                Log::warning("Tentativa de usar tags de cache falhou: {$e->getMessage()}");
             }
+        }
 
-            ${modelNameLowerCase}Query = {modelName}::query();
+        // Para drivers file, database ou outros sem suporte a tags
+        // ou fallback se o suporte a tags falhar
 
-            if ($column !== 'all') {
-                // Verifica se a coluna solicitada é válida (medida de segurança para SQL Injection)
-                if (!in_array($column, Schema::getColumnListing('{modelNamePluralLowerCase}'))) {
-                    return response()->json([
-                        'message' => __('Invalid column')
-                    ], Response::HTTP_BAD_REQUEST);
+        // Se estiver usando file driver, força limpeza de caches específicos
+        if ($driver === 'file') {
+            // Esquema simplificado - esquece caches mais comuns
+            for ($page = 1; $page <= 10; $page++) {
+                for ($perPage = 10; $perPage <= 100; $perPage += 10) {
+                    Cache::forget("{modelNamePluralLowerCase}_page{$page}_{$perPage}_created_at_desc");
+                    Cache::forget("{modelNamePluralLowerCase}_page{$page}_{$perPage}_updated_at_desc");
+                    Cache::forget("{modelNamePluralLowerCase}_page{$page}_{$perPage}_created_at_asc");
+                    Cache::forget("{modelNamePluralLowerCase}_page{$page}_{$perPage}_updated_at_asc");
                 }
-
-                // Busca na coluna específica usando LOWER para case insensitivity
-                ${modelNameLowerCase}Query->whereRaw("LOWER({$column}) LIKE ?", ['%' . $query . '%']);
-            } else {
-                // Busca em todas as colunas de texto (exclui colunas não pesquisáveis)
-                $searchableColumns = array_filter($availableColumns, function($col) {
-                    // Exclui colunas que geralmente não são usadas para busca de texto
-                    $excludedColumns = ['id', 'created_at', 'updated_at', 'deleted_at'];
-                    return !in_array($col, $excludedColumns);
-                });
-
-                ${modelNameLowerCase}Query->where(function($q) use ($searchableColumns, $query) {
-                    foreach ($searchableColumns as $col) {
-                        if (in_array($col, Schema::getColumnListing('{modelNamePluralLowerCase}'))) {
-                            $q->orWhereRaw("LOWER({$col}) LIKE ?", ['%' . $query . '%']);
-                        }
-                    }
-                });
             }
-
-            ${modelNamePluralLowerCase} = ${modelNameLowerCase}Query->paginate($perPage);
-
-            // Verificar se algum resultado foi encontrado
-            if (${modelNamePluralLowerCase}->isEmpty()) {
-                return response()->json([
-                    'message' => __('No {modelNamePluralLowerCase} results found'),
-                    'data' => []
-                ], Response::HTTP_OK);
+        } else {
+            // Para outros drivers que não sejam file ou que suportem tags
+            // Pode ser implementado conforme a necessidade específica do driver
+            // Exemplo para o driver database:
+            if ($driver === 'database') {
+                // Usa query direta para limpar o cache no banco
+                DB::table('cache')
+                    ->where('key', 'like', '%{modelNamePluralLowerCase}%')
+                    ->delete();
             }
+        }
 
-            return (new {modelName}Collection(${modelNamePluralLowerCase}))
-                ->response()
-                ->setStatusCode(Response::HTTP_OK);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'message' => __('Validation error'),
-                'errors' => $e->errors()
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        // Limpa também caches específicos de itens individuais que podem estar relacionados
+        try {
+            $ids = {modelName}::pluck('id')->toArray();
+            foreach ($ids as $id) {
+                Cache::forget('{modelNameLowerCase}_' . $id);
+            }
         } catch (\Exception $e) {
-            Log::error('Erro ao pesquisar {modelNamePluralLowerCase}: ' . $e->getMessage());
-            return response()->json([
-                'message' => __('Failed to search {modelNamePluralLowerCase}'),
-                'error' => $e->getMessage()
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            Log::warning("Erro ao limpar caches individuais: {$e->getMessage()}");
         }
     }
 }
