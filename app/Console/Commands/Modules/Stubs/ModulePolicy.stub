@@ -1,0 +1,50 @@
+<?php
+
+namespace App\Policies;
+
+use App\Models\DummyModel;
+use App\Models\User;
+use Illuminate\Auth\Access\HandlesAuthorization;
+
+class DummyModelPolicy
+{
+    use HandlesAuthorization;
+
+    public function before($user, $ability)
+    {
+        if ($user->is_admin) {
+            return true;
+        }
+    }
+
+    public function viewAny(User $user)
+    {
+        return true;
+    }
+
+    public function view(User $user, DummyModel $DummyModelObject)
+    {
+        return true;
+    }
+
+    public function create(User $user)
+    {
+        return true;
+    }
+
+    public function update(User $user, DummyModel $DummyModelObject)
+    {
+        return true;
+    }
+
+    public function delete(User $user, DummyModel $DummyModelObject)
+    {
+        return true;
+    }
+
+    public function restore(User $user, DummyModel $DummyModelObject)
+    {
+        return true;
+    }
+
+}

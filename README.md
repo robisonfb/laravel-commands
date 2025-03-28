@@ -1,66 +1,127 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel Comand - API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Versão do Laravel: Laravel Framework 12
 
-## About Laravel
+Este projeto utiliza Laravel Sail para execução local.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Instalação
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+```bash
+docker run --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "$(pwd):/var/www/html" \
+    -w /var/www/html \
+    laravelsail/php83-composer:latest \
+    composer install --ignore-platform-reqs
+```
+Inicie os containers:
+``` bash
+sail up -d
+```
+Rode o composer novamente:
+``` bash
+sail composer install
+```
+Gere a chave da aplicação:
+``` bash
+sail artisan key:generate
+```
+Execute as migrações e popule o banco de dados:
+``` bash
+sail artisan migrate:fresh --seed
+```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Consulte a documentação do Sail para mais detalhes sobre a execução do projeto.
+## Autenticação
+Sanctum
 
-## Learning Laravel
+## Ferramentas
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Laravel Pint
+Para formatar o código antes de commitar:
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+``` bash
+sail pint
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Testes
 
-## Laravel Sponsors
+Para rodar todos os testes:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+``` bash
+sail pest
+```
 
-### Premium Partners
+Para rodar um teste específico:
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+``` bash
+sail pest tests/Feature/Api/Blog/BlogTest.php
+```
 
-## Contributing
+Criar um novo teste automatico
+``` bash
+sail artisan module:test NomedaModel
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Command
 
-## Code of Conduct
+O comando `module:all` é uma ferramenta poderosa para agilizar o processo de criação de diversos componentes deste projeto. Ele automatiza a geração de vários artefatos relacionados a um modelo, facilitando o desenvolvimento e seguindo as convenções do projeto.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+#### Funcionalidades Principais:
 
-## Security Vulnerabilities
+**Criação de Componentes:**
+O comando `module:all` permite a criação dos seguintes componentes para um modelo específico:
+- Model
+- Observer
+- Policy
+- Controller
+- Request
+- Repository
+- Resource
+- Test
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+#### Uso do Comando:
 
-## License
+O comando `module:all` aceita a seguinte opção:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- `--model=nome_do_modelo`: Especifica o nome do modelo para o qual os componentes serão gerados.
+
+exemplo de uso
+``` bash
+sail artisan module:all --model=CoronaVaccination
+```
+
+``` php
+// apenas para referencias para criar os modulos
+// DummyModel -> AdvanceDirective
+// CamelObject -> advanceDirective
+// DummyModelPluralObject -> advancedirectives
+// DummyModelObject -> advancedirective
+```
+
+#### Lembretes:
+
+- No arquivo `routes\api.php`, é necessário adicionar uma rota de recursos para o modelo criado.
+- No método `boot` do arquivo `app\Providers\AppServiceProvider.php`, é necessário registrar o observer para o modelo criado.
+
+Este comando automatizado simplifica o processo de criação e configuração de componentes em projetos, aumentando a produtividade.
+
+### Localize
+Este projeto utiliza o `Localize` para gerenciamento de traduções. Certifique-se de manter os arquivos de idioma atualizados usando as ferramentas fornecidas pelo Localize. [Documentação](https://github.com/amiranagram/localizator#remove-missing-keys)
+
+``` bash
+sail artisan localize de,en,pt-br
+```
+> Nota: As strings que você já traduziu não serão substituídas.
+
+Remover chaves ausentes
+``` bash
+php artisan localize --remove-missing
+```
+
+
+O Horizon estará acessível em http://localhost/horizon.
+
+### Logs
+Use o https://laradumps.dev/
+

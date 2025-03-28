@@ -1,0 +1,167 @@
+<?php
+
+use App\Models\User;
+use App\Models\Profile;
+use App\Models\DummyModel;
+use Illuminate\Http\UploadedFile;
+use function Pest\Laravel\{getJson, postJson, putJson, deleteJson};
+use Laravel\Sanctum\Sanctum;
+
+beforeEach(function () {
+    $this->user = User::factory()->create();
+    $this->profile = Profile::factory()->create(['user_id' => $this->user->id]);
+    $this->token = $this->user->createToken('test_token')->plainTextToken;
+});
+
+it('prevents unauthorized access to protected routes', function () {
+    $response = getJson(route('DummyModelPluralObject.index'));
+    $response->assertStatus(401);
+});
+
+it('checks relationships between DummyModelObject models', function () {
+    DummyModel::factory()->create(['profile_id' => $this->profile->id]);
+
+    expect($this->profile->DummyModelPluralObject)->not->toBeEmpty();
+});
+
+it('delete DummyModelObjects related to the selected profile', function () {
+    DummyModel::factory()->count(5)->create(['profile_id' => $this->profile->id]);
+
+    $DummyModelIds = $this->profile->DummyModelPluralObject->pluck('id')->toArray();
+
+    $this->profile->delete();
+
+    foreach ($DummyModelIds as $id) {
+        $this->assertDatabaseMissing('DummyModelPluralObject', ['id' => $id]);
+    }
+});
+
+describe('Crud', function () {
+    it('returns a list of DummyModelObject', function () {
+        DummyModel::factory()->count(20)->create(['profile_id' => $this->profile->id]);
+
+        $data = [
+            'per_page' => '15',
+            'profile_id' => $this->profile->id,
+        ];
+
+        $response = getJson(route('DummyModelPluralObject.index', $data), ['Authorization' => 'Bearer ' . $this->token])
+            ->assertStatus(200)
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [],
+                ],
+            ]);
+
+        expect($response['data']['pagination']['total'])->toBe(20);
+    });
+
+    it('shows a DummyModelObject', function () {
+        $DummyModelObject = DummyModel::factory()->create(['profile_id' => $this->profile->id]);
+
+        getJson(route('DummyModelPluralObject.show', ['DummyModelObject' => $DummyModelObject->id]), ['Authorization' => 'Bearer ' . $this->token])
+            ->assertStatus(200)
+            ->assertJsonStructure([
+                'data' => [],
+            ]);
+    });
+
+    it('stores a DummyModelObject', function () {
+
+        $file_path = public_path('test/file_test.jpeg');
+
+        $data = DummyModel::factory()->make([
+            'profile_id' => $this->profile->id,
+            'file_path' => new UploadedFile($file_path, 'file_test.jpeg', 'image/jpeg', null, true),
+            ])->toArray();
+
+        postJson(route('DummyModelPluralObject.store'), $data, ['Authorization' => 'Bearer ' . $this->token])
+            ->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'message' => __('DummyModel created successfully'),
+                'data' => [],
+            ]);
+    });
+
+    it('updates a DummyModelObject', function () {
+        $DummyModelObject = DummyModel::factory()->create(['profile_id' => $this->profile->id]);
+
+        $data = ['profile_id' => $this->profile->id];
+
+        putJson(route('DummyModelPluralObject.update', ['DummyModelObject' => $DummyModelObject->id]), $data, ['Authorization' => 'Bearer ' . $this->token])
+            ->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'message' => __('DummyModel updated successfully'),
+                'data' => $data,
+            ]);
+    });
+
+    it('deletes a DummyModelObject', function () {
+        $DummyModelObject = DummyModel::factory()->create(['profile_id' => $this->profile->id]);
+
+        deleteJson(route('DummyModelPluralObject.destroy', ['DummyModelObject' => $DummyModelObject->id]), [], ['Authorization' => 'Bearer ' . $this->token])
+            ->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'message' => __('DummyModel deleted successfully'),
+            ]);
+    });
+});
+
+describe('Validations', function () {
+    it('validates DummyModelObject required fields', function () {
+
+        $data = [
+            'profile_id' => $this->profile->id,
+        ];
+
+        postJson(route('DummyModelPluralObject.store'), $data, ['Authorization' => 'Bearer ' . $this->token])
+            ->assertStatus(422)
+            ->assertJson(function($json) {
+                $json->where('success', false)
+                    ->where('message', __('validation.required', ['attribute' => 'type']) . ' (and 6 more errors)')
+                    ->has('errors', function($errors) {
+                        $errors->where('type', [__('validation.required', ['attribute' => 'type'])])
+                                ->where('street', [__('validation.required', ['attribute' => 'street'])])
+                                ->where('number', [__('validation.required', ['attribute' => 'number'])])
+                                ->where('zip_code', [__('validation.required', ['attribute' => 'zip code'])])
+                                ->where('city', [__('validation.required', ['attribute' => 'city'])])
+                                ->where('province', [__('validation.required', ['attribute' => 'province'])])
+                                ->where('country', [__('validation.required', ['attribute' => 'country'])]);
+                    });
+            });
+
+    });
+
+    it('validates DummyModelObject file upload', function () {
+        $file_path = public_path('test/file_test.jpeg');
+
+        $data = DummyModel::factory()->make([
+            'profile_id' => $this->profile->id,
+            'file_path' => new UploadedFile($file_path, 'file_test.jpeg', 'image/jpeg', null, true),
+        ])->toArray();
+
+        postJson(route('DummyModelPluralObject.store'), $data, ['Authorization' => 'Bearer ' . $this->token])
+            ->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'message' => __('DummyModel created successfully'),
+            ]);
+    });
+
+});
+
+describe('Permissions', function () {
+    // it('prevents users from accessing other users\' data', function () {
+    //     $otherUser = User::factory()->create();
+    //     $otherProfile = Profile::factory()->create(['user_id' => $otherUser->id]);
+    //     $DummyModelObject = DummyModel::factory()->create(['profile_id' => $otherProfile->id]);
+
+    //     $data = ['DummyModelObject' => $DummyModelObject->id];
+
+    //     $response = getJson(route('DummyModelPluralObject.show', $data), ['Authorization' => 'Bearer ' . $this->token]);
+    //     $response->assertStatus(200); // Adjust according to your application's authorization logic
+    // });
+});

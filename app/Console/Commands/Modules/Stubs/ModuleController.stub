@@ -1,0 +1,322 @@
+<?php
+
+namespace DummyNamespace;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\DummyModelStoreRequest;
+use App\Http\Requests\Update{modelName}Request;
+use App\Http\Resources\DummyModelResource;
+use App\Http\Resources\{modelName}Collection;
+use App\Models\{modelName};
+use App\Repositories\DummyModelRepository;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+
+class DummyClass extends Controller
+{
+
+    /**
+     * Display a listing of {modelNamePluralLowerCase}.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+
+    public function index(Request $request): JsonResponse
+    {
+        try {
+            // Get query parameters for filtering and pagination
+            $perPage = $request->query('per_page', 15);
+
+            // Coluna de classificação
+            $sortBy = $request->query('sort_by', 'created_at');
+            $validSortOrders = ['created_at', 'updated_at']; // Adicione outras colunas para ordens de classificação
+            if (!in_array(strtolower($sortBy), $validSortOrders)) {
+                $sortOrder = 'created_at'; // Fallback para coluna segura
+            }
+
+            // Ordem de classificação
+            $sortOrder = $request->query('sort_order', 'desc');
+            $validSortOrders = ['asc', 'desc'];
+            if (!in_array(strtolower($sortOrder), $validSortOrders)) {
+                $sortOrder = 'desc'; // Fallback para ordem segura
+            }
+
+            // Tenta encontrar a coleção de {modelNamePluralLowerCase} usando o cache
+            ${modelNamePluralLowerCase} = Cache::remember('{modelNamePluralLowerCase}', 3600, function () use ($perPage, $sortBy, $sortOrder) {
+                return {modelName}::orderBy($sortBy, $sortOrder)->paginate($perPage);
+            });
+
+            // Inicia a consulta
+            $query = {modelName}::query();
+
+            // Aplicar filtros
+            $query->orderBy($sortBy, $sortOrder);
+
+            // Get paginated results
+            ${modelNamePluralLowerCase} = $query->paginate($perPage);
+
+            // Retorna coleção de recursos
+            return new {modelName}Collection(${modelNamePluralLowerCase});
+        } catch (\Exception $e) {
+            Log::error('Error fetching {modelNamePluralLowerCase}: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to fetch {modelNamePluralLowerCase}',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Store a newly created {modelNameLowerCase} in storage.
+     *
+     * @param Store{modelName}Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function store(Store{modelName}Request $request): JsonResponse
+    {
+        DB::beginTransaction();
+
+        try {
+            $validatedData = $request->validated();
+
+            // Armazena múltiplos arquivos (se existirem)
+            if ($request->hasFile('files')) {
+                $imagePaths = store_files($request, 'files', '{modelNamePluralLowerCase}', 'public');
+                $validatedData['files'] = json_encode($imagePaths);
+            }
+
+            ${modelNameLowerCase} = {modelName}::create($validatedData);
+
+            DB::commit();
+
+            // Limpar cache após criar um {modelNameLowerCase}
+            Cache::forget('{modelNamePluralLowerCase}');
+
+            return (new {modelName}Resource(${modelNameLowerCase}))
+                ->response()
+                ->setStatusCode(Response::HTTP_CREATED);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error creating {modelNameLowerCase}: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to create {modelNameLowerCase}',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Display the specified {modelNameLowerCase}.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function show($id): JsonResponse
+    {
+        try {
+            //Tenta encontrar o {modelNameLowerCase} usando o cache
+            ${modelNameLowerCase} = Cache::remember('{modelNameLowerCase}_' . $id, 3600, function () use ($id) {
+                return {modelName}::findOrFail($id);
+            });
+
+            return new {modelName}Resource(${modelNameLowerCase});
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => '{modelName} not found'
+            ], Response::HTTP_NOT_FOUND);
+        } catch (\Exception $e) {
+            Log::error('Error fetching {modelNameLowerCase}: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to fetch {modelNameLowerCase}',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Update the specified {modelNameLowerCase} in storage.
+     *
+     * @param Update{modelName}Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function update(Update{modelName}Request $request, $id): JsonResponse
+    {
+        DB::beginTransaction();
+
+        try {
+            ${modelNameLowerCase} = {modelName}::findOrFail($id);
+            $validatedData = $request->validated();
+
+            // Armazena múltiplos arquivos (se existirem)
+            if ($request->hasFile('files')) {
+                $newFilePaths = store_files($request, 'files', '{modelNamePluralLowerCase}', 'public');
+
+                // Combinar com arquivos existentes (se houver)
+                $existingFiles = [];
+                if (!empty(${modelNameLowerCase}->files)) {
+                    $existingFiles = json_decode(${modelNameLowerCase}->files, true) ?: [];
+                }
+
+                $allFiles = array_merge($existingFiles, $newFilePaths);
+                $validatedData['files'] = json_encode($allFiles);
+            }
+
+            // Atualizar o {modelNameLowerCase}
+            ${modelNameLowerCase}->update($validatedData);
+
+            DB::commit();
+
+            // Limpar cache
+            Cache::forget('{modelNameLowerCase}_' . $id);
+            Cache::forget('{modelNamePluralLowerCase}');
+
+            return new {modelName}Resource(${modelNameLowerCase});
+        } catch (ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => '{modelName} not found'
+            ], Response::HTTP_NOT_FOUND);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error updating {modelNameLowerCase}: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to update {modelNameLowerCase}',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Remove the specified {modelNameLowerCase} from storage.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function destroy($id): JsonResponse
+    {
+        DB::beginTransaction();
+
+        try {
+            ${modelNameLowerCase} = {modelName}::findOrFail($id);
+
+            // Excluir arquivos adicionais se existirem
+            if (!empty(${modelNameLowerCase}->files)) {
+                $files = json_decode(${modelNameLowerCase}->files, true) ?: [];
+                delete_files($files);
+            }
+
+            ${modelNameLowerCase}->delete();
+
+            DB::commit();
+
+            // Limpar cache
+            Cache::forget('{modelNameLowerCase}_' . $id);
+            Cache::forget('{modelNamePluralLowerCase}');
+
+            return response()->json(null, Response::HTTP_NO_CONTENT);
+        } catch (ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => '{modelName} not found'
+            ], Response::HTTP_NOT_FOUND);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error deleting {modelNameLowerCase}: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to delete {modelNameLowerCase}',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Search for {modelNamePluralLowerCase} by any column.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function search(Request $request): JsonResponse
+    {
+        try {
+            // Validar parâmetros de busca
+            $request->validate([
+                'q' => 'required|string|min:1',
+                'column' => 'required|string',
+                'per_page' => 'nullable|integer|min:1|max:100'
+            ]);
+
+            $query = $request->query('q');
+            $column = strtolower($request->query('column'));
+            $perPage = $request->query('per_page', 15);
+
+            // Obtém as colunas disponíveis na tabela
+            $availableColumns = Schema::getColumnListing('{modelNamePluralLowerCase}');
+
+            // Adiciona opção especial 'all'
+            $availableColumns[] = 'all';
+
+            // Verifica se a coluna solicitada está disponível
+            if (!in_array($column, $availableColumns)) {
+                return response()->json([
+                    'message' => 'Invalid column specified',
+                    'available_columns' => $availableColumns
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            ${modelNameLowerCase}Query = {modelName}::query();
+
+            if ($column !== 'all') {
+                // Busca na coluna específica usando LOWER para case insensitivity
+                ${modelNameLowerCase}Query->whereRaw("LOWER({$column}) LIKE ?", ['%' . $query . '%']);
+            } else {
+                // Busca em todas as colunas de texto (exclui colunas não pesquisáveis)
+                $searchableColumns = array_filter($availableColumns, function($col) {
+                    // Exclui colunas que geralmente não são usadas para busca de texto
+                    $excludedColumns = ['id', 'created_at', 'updated_at', 'deleted_at'];
+                    return !in_array($col, $excludedColumns);
+                });
+
+                ${modelNameLowerCase}Query->where(function($q) use ($searchableColumns, $query) {
+                    foreach ($searchableColumns as $col) {
+                        $q->orWhereRaw("LOWER({$col}) LIKE ?", ['%' . $query . '%']);
+                    }
+                });
+            }
+
+            ${modelNamePluralLowerCase} = ${modelNameLowerCase}Query->paginate($perPage);
+
+            // Verificar se algum resultado foi encontrado
+            if (${modelNamePluralLowerCase}->isEmpty()) {
+                return response()->json([
+                    'message' => 'No {modelNamePluralLowerCase} found for the given search criteria',
+                    'data' => []
+                ], Response::HTTP_OK);
+            }
+
+            return new {modelName}Collection(${modelNamePluralLowerCase});
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation error',
+                'errors' => $e->errors()
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (\Exception $e) {
+            Log::error('Error searching {modelNamePluralLowerCase}: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to search {modelNamePluralLowerCase}',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+}
