@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Storage;
 class {modelName}Observer
 {
     /**
-     * Handle the {modelName} "created" event.
+     * Manipula o evento de criação do {modelName}.
      *
      * @param  \App\Models\{modelName}  ${modelNameLowerCase}
      * @return void
@@ -25,7 +25,7 @@ class {modelName}Observer
     }
 
     /**
-     * Handle the {modelName} "updated" event.
+     * Manipula o evento de atualização do {modelName}.
      *
      * @param  \App\Models\{modelName}  ${modelNameLowerCase}
      * @return void
@@ -40,7 +40,7 @@ class {modelName}Observer
     }
 
     /**
-     * Handle the {modelName} "deleted" event.
+     * Manipula o evento de exclusão do {modelName}.
      *
      * @param  \App\Models\{modelName}  ${modelNameLowerCase}
      * @return void
@@ -55,7 +55,7 @@ class {modelName}Observer
     }
 
     /**
-     * Handle the {modelName} "restored" event.
+     * Manipula o evento de restauração do {modelName}.
      *
      * @param  \App\Models\{modelName}  ${modelNameLowerCase}
      * @return void
@@ -70,7 +70,7 @@ class {modelName}Observer
     }
 
     /**
-     * Handle the {modelName} "force deleted" event.
+     * Manipula o evento de exclusão permanente do {modelName}.
      *
      * @param  \App\Models\{modelName}  ${modelNameLowerCase}
      * @return void
@@ -98,7 +98,7 @@ class {modelName}Observer
     }
 
     /**
-     * Limpar cache relacionado ao modelo.
+     * Limpa o cache relacionado ao modelo.
      *
      * @param int|null $id
      * @return void

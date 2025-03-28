@@ -11,7 +11,7 @@ class {modelName}Policy
     use HandlesAuthorization;
 
     /**
-     * Determine whether the user can view any models.
+     * Determina se o usuário pode visualizar qualquer modelo.
      *
      * @param  \App\Models\User  $user
      * @return \Illuminate\Auth\Access\Response|bool
@@ -23,7 +23,7 @@ class {modelName}Policy
     }
 
     /**
-     * Determine whether the user can view the model.
+     * Determina se o usuário pode visualizar o modelo.
      *
      * @param  \App\Models\User  $user
      * @param  \App\Models\{modelName}  ${modelNameLowerCase}
@@ -36,7 +36,7 @@ class {modelName}Policy
     }
 
     /**
-     * Determine whether the user can create models.
+     * Determina se o usuário pode criar modelos.
      *
      * @param  \App\Models\User  $user
      * @return \Illuminate\Auth\Access\Response|bool
@@ -48,7 +48,7 @@ class {modelName}Policy
     }
 
     /**
-     * Determine whether the user can update the model.
+     * Determina se o usuário pode atualizar o modelo.
      *
      * @param  \App\Models\User  $user
      * @param  \App\Models\{modelName}  ${modelNameLowerCase}
@@ -61,7 +61,7 @@ class {modelName}Policy
     }
 
     /**
-     * Determine whether the user can delete the model.
+     * Determina se o usuário pode excluir o modelo.
      *
      * @param  \App\Models\User  $user
      * @param  \App\Models\{modelName}  ${modelNameLowerCase}
@@ -74,7 +74,7 @@ class {modelName}Policy
     }
 
     /**
-     * Determine whether the user can restore the model.
+     * Determina se o usuário pode restaurar o modelo.
      *
      * @param  \App\Models\User  $user
      * @param  \App\Models\{modelName}  ${modelNameLowerCase}
@@ -87,7 +87,7 @@ class {modelName}Policy
     }
 
     /**
-     * Determine whether the user can permanently delete the model.
+     * Determina se o usuário pode excluir permanentemente o modelo.
      *
      * @param  \App\Models\User  $user
      * @param  \App\Models\{modelName}  ${modelNameLowerCase}

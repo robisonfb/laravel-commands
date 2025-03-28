@@ -13,7 +13,7 @@ class {modelName}Listener implements ShouldQueue
     use InteractsWithQueue;
 
     /**
-     * Create the event listener.
+     * Cria o ouvinte de evento.
      *
      * @return void
      */
@@ -23,7 +23,7 @@ class {modelName}Listener implements ShouldQueue
     }
 
     /**
-     * Handle the event.
+     * Manipula o evento.
      *
      * @param  {modelName}Created  $event
      * @return void
@@ -48,7 +48,7 @@ class {modelName}Listener implements ShouldQueue
     }
 
     /**
-     * Handle a job failure.
+     * Manipula a falha de processamento do trabalho.
      *
      * @param  {modelName}Created  $event
      * @param  \Throwable  $exception

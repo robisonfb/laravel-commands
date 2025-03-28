@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -8,14 +7,14 @@ use Illuminate\Http\Request;
 class {modelName}Collection extends ResourceCollection
 {
     /**
-     * The resource that this resource collects.
+     * O recurso que esta coleção coleta.
      *
      * @var string
      */
     public $collects = {modelName}Resource::class;
 
     /**
-     * Transform the resource collection into an array.
+     * Transforma a coleção de recursos em um array.
      *
      * @param  Request  $request
      * @return array
@@ -31,7 +30,7 @@ class {modelName}Collection extends ResourceCollection
     }
 
     /**
-     * Get additional data that should be returned with the resource array.
+     * Obtém dados adicionais que devem ser retornados com o array de recursos.
      *
      * @param  Request  $request
      * @return array

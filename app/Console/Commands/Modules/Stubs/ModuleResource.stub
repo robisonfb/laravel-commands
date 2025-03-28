@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Storage;
 class {modelName}Resource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
+     * Transforma o recurso em um array.
      *
      * @param  Request  $request
      * @return array
@@ -63,7 +63,7 @@ class {modelName}Resource extends JsonResource
     }
 
     /**
-     * Get additional data that should be returned with the resource array.
+     * Obtém dados adicionais que devem ser retornados com o array de recursos.
      *
      * @param  Request  $request
      * @return array
