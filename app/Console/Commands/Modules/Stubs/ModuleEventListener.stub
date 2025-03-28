@@ -1,118 +1,65 @@
 <?php
 
-namespace App\Observers;
+namespace App\Listeners;
 
+use App\Events\{modelName}Created;
 use App\Models\{modelName};
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
-class {modelName}Observer
+class {modelName}Listener implements ShouldQueue
 {
+    use InteractsWithQueue;
+
     /**
-     * Handle the {modelName} "created" event.
+     * Create the event listener.
      *
-     * @param  \App\Models\{modelName}  ${modelNameLowerCase}
      * @return void
      */
-    public function created({modelName} ${modelNameLowerCase})
+    public function __construct()
     {
-        // Limpar cache relacionado
-        $this->clearCache();
-
-        // Registrar atividade
-        Log::info('{modelName} criado', ['id' => ${modelNameLowerCase}->id, 'name' => ${modelNameLowerCase}->name]);
+        //
     }
 
     /**
-     * Handle the {modelName} "updated" event.
+     * Handle the event.
      *
-     * @param  \App\Models\{modelName}  ${modelNameLowerCase}
+     * @param  {modelName}Created  $event
      * @return void
      */
-    public function updated({modelName} ${modelNameLowerCase})
+    public function handle({modelName}Created $event)
     {
-        // Limpar cache relacionado
-        $this->clearCache(${modelNameLowerCase}->id);
+        // Acessa o modelo através do evento
+        ${modelNameLowerCase} = $event->{modelNameLowerCase};
 
-        // Registrar atividade
-        Log::info('{modelName} atualizado', ['id' => ${modelNameLowerCase}->id, 'name' => ${modelNameLowerCase}->name]);
+        // Exemplo: Registrar atividade
+        Log::info('{modelName} criado', [
+            'id' => ${modelNameLowerCase}->id,
+            'name' => ${modelNameLowerCase}->name,
+            'user_id' => auth()->id() ?? 'sistema'
+        ]);
+
+        // Exemplo: Atualizar estatísticas ou realizar processamento assíncrono
+        // Stats::increment('{modelNamePluralLowerCase}_count');
+
+        // Exemplo: Enviar notificação
+        // Notification::send(User::admins()->get(), new {modelName}CreatedNotification(${modelNameLowerCase}));
     }
 
     /**
-     * Handle the {modelName} "deleted" event.
+     * Handle a job failure.
      *
-     * @param  \App\Models\{modelName}  ${modelNameLowerCase}
+     * @param  {modelName}Created  $event
+     * @param  \Throwable  $exception
      * @return void
      */
-    public function deleted({modelName} ${modelNameLowerCase})
+    public function failed({modelName}Created $event, \Throwable $exception)
     {
-        // Limpar cache relacionado
-        $this->clearCache(${modelNameLowerCase}->id);
-
-        // Registrar atividade
-        Log::info('{modelName} excluído', ['id' => ${modelNameLowerCase}->id, 'name' => ${modelNameLowerCase}->name]);
-    }
-
-    /**
-     * Handle the {modelName} "restored" event.
-     *
-     * @param  \App\Models\{modelName}  ${modelNameLowerCase}
-     * @return void
-     */
-    public function restored({modelName} ${modelNameLowerCase})
-    {
-        // Limpar cache relacionado
-        $this->clearCache(${modelNameLowerCase}->id);
-
-        // Registrar atividade
-        Log::info('{modelName} restaurado', ['id' => ${modelNameLowerCase}->id, 'name' => ${modelNameLowerCase}->name]);
-    }
-
-    /**
-     * Handle the {modelName} "force deleted" event.
-     *
-     * @param  \App\Models\{modelName}  ${modelNameLowerCase}
-     * @return void
-     */
-    public function forceDeleted({modelName} ${modelNameLowerCase})
-    {
-        // Limpar arquivos associados
-        if (!empty(${modelNameLowerCase}->files)) {
-            $files = is_array(${modelNameLowerCase}->files)
-                ? ${modelNameLowerCase}->files
-                : json_decode(${modelNameLowerCase}->files, true);
-
-            if (!empty($files)) {
-                foreach ($files as $file) {
-                    Storage::delete($file);
-                }
-            }
-        }
-
-        // Limpar cache relacionado
-        $this->clearCache(${modelNameLowerCase}->id);
-
-        // Registrar atividade
-        Log::info('{modelName} excluído permanentemente', ['id' => ${modelNameLowerCase}->id, 'name' => ${modelNameLowerCase}->name]);
-    }
-
-    /**
-     * Limpar cache relacionado ao modelo.
-     *
-     * @param int|null $id
-     * @return void
-     */
-    private function clearCache(?int $id = null)
-    {
-        // Limpar cache específico se ID for fornecido
-        if ($id) {
-            Cache::forget('{modelNameLowerCase}_' . $id);
-        }
-
-        // Limpar caches gerais
-        Cache::forget('{modelNamePluralLowerCase}_all');
-        Cache::forget('recent_{modelNamePluralLowerCase}');
-        Cache::forget('featured_{modelNamePluralLowerCase}');
+        // Registrar falha no processamento do evento
+        Log::error('Falha ao processar evento {modelName}Created', [
+            'id' => $event->{modelNameLowerCase}->id,
+            'error' => $exception->getMessage()
+        ]);
     }
 }

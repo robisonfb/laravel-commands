@@ -30,6 +30,13 @@ class ModuleController extends GeneratorCommand
     protected $description = 'Gera um controlador para A Model especificado';
 
     /**
+     * O tipo de classe que está sendo gerada.
+     *
+     * @var string
+     */
+    protected $type = 'Controller';
+
+    /**
      * Executa o comando para gerar o controlador
      *
      * @return void

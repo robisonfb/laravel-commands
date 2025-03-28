@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('{modelNamePluralSnakeCase}', function (Blueprint $table) {
+        Schema::create('{modelNamePluralLowerCase}', function (Blueprint $table) {
             $table->id();
 
             // Informações básicas
@@ -46,6 +46,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('{modelNamePluralSnakeCase}');
+        Schema::dropIfExists('{modelNamePluralLowerCase}');
     }
 };

@@ -1,9 +1,9 @@
 <?php
 /**
- * Classe para geração automática de migrações de módulos
+ * Classe para geração automática de event listeners de módulos
  *
  * Esta classe estende o GeneratorCommand do Laravel para criar
- * migrações personalizadas a partir de stubs definidos.
+ * event listeners personalizados a partir de stubs definidos.
  */
 
 namespace App\Console\Commands\Modules;
@@ -11,14 +11,14 @@ namespace App\Console\Commands\Modules;
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Str;
 
-class ModuleMigration extends GeneratorCommand
+class ModuleEventListener extends GeneratorCommand
 {
     /**
      * Define a assinatura do comando no Artisan
      *
      * @var string
      */
-    protected $signature = 'module:migration
+    protected $signature = 'module:event-listener
                             {name : The name of the model.}
                             ';
 
@@ -27,91 +27,91 @@ class ModuleMigration extends GeneratorCommand
      *
      * @var string
      */
-    protected $description = 'Gera uma migração para o módulo especificado';
+    protected $description = 'Gera um event listener para o módulo especificado';
 
     /**
      * O tipo de classe que está sendo gerada.
      *
      * @var string
      */
-    protected $type = 'Migration';
+    protected $type = 'Event Listener';
 
     /**
-     * Executa o comando para gerar a migração
+     * Executa o comando para gerar o event listener
      *
      * @return int
      */
     public function handle()
     {
-        $name = $this->getNameInput();
+        $result = parent::handle();
 
-        // Cria o nome da tabela a partir do nome do modelo (pluralizado e snake_case)
-        $tableName = Str::plural(Str::snake($name));
-
-        // Define o nome do arquivo de migração
-        $fileName = date('Y_m_d_His') . '_create_' . $tableName . '_table';
-
-        $path = $this->getPath($fileName);
-
-        // Verifica se o arquivo já existe
-        if ($this->alreadyExists($this->getNameInput())) {
-            $this->error($this->type . ' already exists!');
-            return 1; // Código de erro
+        if ($result === false) {
+            return 1;
         }
 
-        // Cria os diretórios se necessário
-        $this->makeDirectory($path);
-
-        // Gera e salva o arquivo
-        $this->files->put($path, $this->buildClass($name));
-
-        $this->info($this->type . ' created successfully.');
-
-        return 0; // Código de sucesso
+        return 0;
     }
 
     /**
-     * Retorna o caminho para o arquivo stub da migração
+     * Retorna o caminho para o arquivo stub do event listener
      *
      * @return string
      */
     protected function getStub()
     {
-        return app_path() . '/Console/Commands/Modules/Stubs/ModuleMigration.stub';
+        return app_path() . '/Console/Commands/Modules/Stubs/ModuleEventListener.stub';
     }
 
     /**
-     * Define o namespace padrão para a migração gerada
+     * Define o namespace padrão para o event listener gerado
      *
      * @param string $rootNamespace
      * @return string
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\\Database\\Migrations';
+        return $rootNamespace . '\\Listeners';
     }
 
     /**
-     * Obter o caminho do arquivo para a migração.
+     * Qualifica completamente o nome da classe do event listener
      *
      * @param string $name
      * @return string
      */
-    protected function getPath($name)
+    protected function qualifyClass($name)
     {
-        $path = $this->laravel->databasePath() . '/migrations/' . $name . '.php';
-        return $path;
+        $rootNamespace = $this->laravel->getNamespace();
+
+        // Verifica se o nome já inclui o namespace
+        if (Str::startsWith($name, $rootNamespace)) {
+            return $name;
+        }
+
+        // Converte separadores de diretório em separadores de namespace
+        if (Str::contains($name, '/')) {
+            $name = str_replace('/', '\\', $name);
+        }
+
+        // Garante que o nome termina com 'Listener'
+        if (!Str::contains(Str::lower($name), 'listener')) {
+            $name .= 'Listener';
+        }
+
+        return $this->getDefaultNamespace(trim($rootNamespace, '\\')) . '\\' . $name;
     }
 
     /**
-     * Constrói o conteúdo da classe de migração
+     * Constrói o conteúdo da classe do event listener
      *
-     * @param string $name Nome do modelo
+     * Extende o método pai e adiciona substituições específicas do modelo
+     *
+     * @param string $name
      * @return string
      */
     protected function buildClass($name)
     {
-        $stub = $this->files->get($this->getStub());
+        $stub = parent::buildClass($name);
 
         $this->replaceModel($stub);
 
@@ -129,6 +129,11 @@ class ModuleMigration extends GeneratorCommand
     protected function replaceModel(&$stub)
     {
         $modelName = $this->getNameInput();
+
+        // Remove 'Listener' do final se estiver presente
+        if (Str::endsWith($modelName, 'Listener')) {
+            $modelName = Str::replaceLast('Listener', '', $modelName);
+        }
 
         // Substitui o nome do modelo
         $stub = str_replace('{modelName}', $modelName, $stub);

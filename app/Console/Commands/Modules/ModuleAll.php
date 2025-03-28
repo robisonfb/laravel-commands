@@ -65,12 +65,12 @@ class ModuleAll extends Command
 
         // Criar a Migration
         $this->info('Criando Migration...');
-        // $migrationCommand = 'module:migration ' . $model;
-        // $runMigration = Artisan::call($migrationCommand);
-        // if ($runMigration !== 0) {
-        //     $this->error('Falha ao criar a Migration');
-        //     return 1;
-        // }
+        $migrationCommand = 'module:migration ' . $model;
+        $runMigration = Artisan::call($migrationCommand);
+        if ($runMigration !== 0) {
+            $this->error('Falha ao criar a Migration');
+            return 1;
+        }
 
         // // Criar a Factory
         $this->info('Criando Factory...');
