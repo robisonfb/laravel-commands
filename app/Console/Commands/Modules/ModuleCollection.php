@@ -13,7 +13,7 @@ class ModuleCollection extends GeneratorCommand
      * @var string
      */
     protected $signature = 'module:collection
-                            {name: Nome do modelo para o qual o controlador será gerado com base no template}
+                            {name : Nome do modelo para o qual o controlador será gerado com base no template}
                             ';
 
     /**
