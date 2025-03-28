@@ -19,15 +19,15 @@ class ModuleController extends GeneratorCommand
      * @var string
      */
     protected $signature = 'module:controller
-                            {name : The name of the model.}
-                            ';
+                        {name : Nome do modelo para o qual o controlador será gerado com base no template}
+                        ';
 
     /**
      * Descrição do propósito do comando
      *
      * @var string
      */
-    protected $description = 'Gera um controlador para o módulo especificado';
+    protected $description = 'Gera um controlador para A Model especificado';
 
     /**
      * Executa o comando para gerar o controlador

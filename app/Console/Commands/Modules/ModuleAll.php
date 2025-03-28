@@ -5,6 +5,7 @@ namespace App\Console\Commands\Modules;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
+use Illuminate\Support\Pluralizer;
 
 class ModuleAll extends Command
 {
@@ -21,127 +22,116 @@ class ModuleAll extends Command
 
     public function handle()
     {
-        if (!$model = $this->option('model')) {
+        if (!$modelInput = $this->option('model')) {
             $this->error('O parâmetro MODEL é obrigatório');
             return 1;
         }
 
-        // Criar o Model com factory, migration e seeder
-        $command = 'make:model ' . $model . ' -f -m -s';
-        $this->info('Criando Model com migration, factory e seeder...');
-        $run = Artisan::call($command);
-        if ($run !== 0) {
+        // Validar e corrigir nome do modelo
+        $validationResult = $this->validateModelName($modelInput);
+
+        if (!$validationResult['isValid']) {
+            $this->error('O nome do modelo não segue o padrão recomendado.');
+            $this->info('Problemas encontrados:');
+
+            foreach ($validationResult['issues'] as $issue) {
+                $this->warn('- ' . $issue);
+            }
+
+            $this->info('Nome sugerido: ' . $validationResult['suggestion']);
+
+            if (!$this->confirm('Deseja continuar usando o nome sugerido?', true)) {
+                $this->error('Operação cancelada pelo usuário.');
+                return 1;
+            }
+
+            $model = $validationResult['suggestion'];
+            $this->info('Usando: ' . $model);
+        } else {
+            $model = $modelInput;
+        }
+
+        // Criar cada componente separadamente usando os stubs personalizados
+        $this->info('Criando componentes do módulo ' . $model . '...');
+
+        // Criar o Model
+        $this->info('Criando Model...');
+        $modelCommand = 'module:model ' . $model;
+        $runModel = Artisan::call($modelCommand);
+        if ($runModel !== 0) {
             $this->error('Falha ao criar o Model');
+            return 1;
         }
 
-        // Criar a tabela
-        $command = 'module:table ' . $model;
-        $this->info('Criando Tabela...');
-        $run = Artisan::call($command);
-        if ($run !== 0) {
-            $this->error('Falha ao criar a Tabela');
+        // Criar a Migration
+        $this->info('Criando Migration...');
+        $migrationCommand = 'make:migration create_' . Str::plural(Str::snake($model)) . '_table';
+        $runMigration = Artisan::call($migrationCommand);
+        if ($runMigration !== 0) {
+            $this->error('Falha ao criar a Migration');
+            return 1;
         }
 
-        // Criar o Observer
-        $command = 'module:observer ' . $model;
-        $this->info('Criando Observer...');
-        $run = Artisan::call($command);
-        if ($run !== 0) {
-            $this->error('Falha ao criar o Observer');
-        }
-
-        // Criar a Policy
-        $command = 'module:policy ' . $model;
-        $this->info('Criando Policy...');
-        $run = Artisan::call($command);
-        if ($run !== 0) {
-            $this->error('Falha ao criar a Policy');
-        }
-
-        // Criar o Controller
-        $command = 'module:controller ' . $model;
-        $this->info('Criando Controller...');
-        $run = Artisan::call($command);
-        if ($run !== 0) {
-            $this->error('Falha ao criar o Controller');
-        }
-
-        // Criar os Requests (Store e Update)
-        $command = 'module:storerequest ' . $model;
-        $this->info('Criando Store Request...');
-        $run = Artisan::call($command);
-        if ($run !== 0) {
-            $this->error('Falha ao criar o Store Request');
-        }
-
-        $command = 'module:updaterequest ' . $model;
-        $this->info('Criando Update Request...');
-        $run = Artisan::call($command);
-        if ($run !== 0) {
-            $this->error('Falha ao criar o Update Request');
-        }
-
-        // Criar o Repository
-        $command = 'module:repository ' . $model;
-        $this->info('Criando Repository...');
-        $run = Artisan::call($command);
-        if ($run !== 0) {
-            $this->error('Falha ao criar o Repository');
-        }
-
-        // Criar os Resources (Resource e Collection)
-        $command = 'module:resource ' . $model;
-        $this->info('Criando Resource...');
-        $run = Artisan::call($command);
-        if ($run !== 0) {
-            $this->error('Falha ao criar o Resource');
-        }
-
-        $command = 'module:collection ' . $model;
-        $this->info('Criando Collection...');
-        $run = Artisan::call($command);
-        if ($run !== 0) {
-            $this->error('Falha ao criar a Collection');
-        }
-
-        // Criar o Factory
-        $command = 'module:factory ' . $model;
+        // Criar a Factory
         $this->info('Criando Factory...');
-        $run = Artisan::call($command);
-        if ($run !== 0) {
+        $factoryCommand = 'module:factory ' . $model;
+        $runFactory = Artisan::call($factoryCommand);
+        if ($runFactory !== 0) {
             $this->error('Falha ao criar a Factory');
+            return 1;
         }
 
         // Criar o Seeder
-        $command = 'module:seeder ' . $model;
         $this->info('Criando Seeder...');
-        $run = Artisan::call($command);
-        if ($run !== 0) {
+        $seederCommand = 'module:seeder ' . $model;
+        $runSeeder = Artisan::call($seederCommand);
+        if ($runSeeder !== 0) {
             $this->error('Falha ao criar o Seeder');
+            return 1;
         }
 
-        // Criar os Testes
-        $command = 'module:test ' . $model;
-        $this->info('Criando Testes...');
-        $run = Artisan::call($command);
-        if ($run !== 0) {
-            $this->error('Falha ao criar os Testes');
+        // Criar o Controller
+        $this->info('Criando Controller...');
+        $controllerCommand = 'module:controller ' . $model;
+        $runController = Artisan::call($controllerCommand);
+        if ($runController !== 0) {
+            $this->error('Falha ao criar o Controller');
+            return 1;
         }
 
-        // Criar o Event Listener
-        $command = 'module:eventlistener ' . $model;
-        $this->info('Criando Event Listener...');
-        $run = Artisan::call($command);
-        if ($run !== 0) {
-            $this->error('Falha ao criar o Event Listener');
+        // Criar os Requests
+        $this->info('Criando Store Request...');
+        $storeRequestCommand = 'module:store-request ' . $model;
+        $runStoreRequest = Artisan::call($storeRequestCommand);
+        if ($runStoreRequest !== 0) {
+            $this->error('Falha ao criar o Store Request');
+            return 1;
         }
 
-        // Criar a Documentação API
-        $command = 'module:apidoc ' . $model;
-        $this->info('Criando Documentação API...');
-        $run = Artisan::call($command);
-        if ($run !== 0) {
-            $this->error('Falha ao criar a Documentação API');
+        $this->info('Criando Update Request...');
+        $updateRequestCommand = 'module:update-request ' . $model;
+        $runUpdateRequest = Artisan::call($updateRequestCommand);
+        if ($runUpdateRequest !== 0) {
+            $this->error('Falha ao criar o Update Request');
+            return 1;
+        }
+
+        // Criar o Resource
+        $this->info('Criando Resource...');
+        $resourceCommand = 'module:resource ' . $model;
+        $runResource = Artisan::call($resourceCommand);
+        if ($runResource !== 0) {
+            $this->error('Falha ao criar o Resource');
+            return 1;
+        }
+
+        // Criar a Collection
+        $this->info('Criando Collection...');
+        $collectionCommand = 'module:collection ' . $model;
+        $runCollection = Artisan::call($collectionCommand);
+        if ($runCollection !== 0) {
+            $this->error('Falha ao criar a Collection');
+            return 1;
         }
 
         $this->info('---------------------------------');
@@ -177,5 +167,50 @@ class ModuleAll extends Command
         $this->info('');
         $this->info('Acesse a documentação em: /api/documentation');
         $this->info('---------------------------------');
+    }
+
+    /**
+     * Valida e sugere o nome correto para o modelo.
+     *
+     * @param string $name
+     * @return array
+     */
+    protected function validateModelName($name)
+    {
+        $issues = [];
+        $isValid = true;
+
+        // Verificar se começa com letra maiúscula
+        if (!preg_match('/^[A-Z]/', $name)) {
+            $issues[] = 'O nome do modelo deve começar com letra maiúscula';
+            $isValid = false;
+        }
+
+        // Verificar se contém espaços ou caracteres especiais
+        if (preg_match('/[^a-zA-Z0-9]/', $name)) {
+            $issues[] = 'O nome do modelo não deve conter espaços ou caracteres especiais';
+            $isValid = false;
+        }
+
+        // Verificar se está no plural
+        if (Str::plural($name) === $name && Str::singular($name) !== $name) {
+            $issues[] = 'O nome do modelo deve estar no singular';
+            $isValid = false;
+        }
+
+        // Verificar se segue o padrão StudlyCase
+        if ($name !== Str::studly($name)) {
+            $issues[] = 'O nome do modelo deve seguir o padrão StudlyCase';
+            $isValid = false;
+        }
+
+        // Criar sugestão de nome correto
+        $suggestion = Str::studly(Str::singular($name));
+
+        return [
+            'isValid' => $isValid,
+            'issues' => $issues,
+            'suggestion' => $suggestion
+        ];
     }
 }
