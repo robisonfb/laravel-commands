@@ -6,12 +6,6 @@ use App\Http\Requests\{Store{modelName}Request, Update{modelName}Request};
 use App\Http\Resources\{{modelName}Collection, {modelName}Resource};
 use App\Models\{modelName};
 
-use App\Http\Controllers\Controller;
-
-
-
-
-use App\Models\Blog;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\{JsonResponse, Request, Response};
 use Illuminate\Support\Facades\{Cache, DB, Log, Schema};
@@ -66,7 +60,9 @@ class DummyClass extends Controller
             }
 
             // Retorna coleção de recursos
-            return new {modelName}Collection(${modelNamePluralLowerCase});
+            return (new {modelName}Collection(${modelNamePluralLowerCase}))
+                ->response()
+                ->setStatusCode(Response::HTTP_OK);
         } catch (\Exception $e) {
             Log::error('Erro ao buscar {modelNamePluralLowerCase}: ' . $e->getMessage());
             return response()->json([
@@ -130,7 +126,9 @@ class DummyClass extends Controller
                 return {modelName}::findOrFail($id);
             });
 
-            return new {modelName}Resource(${modelNameLowerCase});
+            return (new {modelName}Resource(${modelNameLowerCase}))
+                ->response()
+                ->setStatusCode(Response::HTTP_OK);
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'message' => __('messages.model_not_found', ['model' => '{modelName}'])
