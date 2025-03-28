@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 use Illuminate\Support\Pluralizer;
+use Illuminate\Support\Facades\File;
 
 class ModuleAll extends Command
 {
@@ -62,6 +63,7 @@ class ModuleAll extends Command
         // Opções adicionais para os comandos
         $forceOption = $this->option('force') ? ' --force' : '';
         $continueOnError = $this->option('continue');
+        $generateRoute = true;
 
         // Array de componentes a serem criados
         $components = [
@@ -76,7 +78,7 @@ class ModuleAll extends Command
             ['Update Request', 'module:update-request', false],
             ['Resource', 'module:resource', false],
             ['Collection', 'module:collection', false],
-            ['Test', 'module:test', false],
+            ['Test', 'module:test', true]
         ];
 
         $this->line('🔨 Criando componentes do módulo ' . $model . '...');
@@ -127,6 +129,20 @@ class ModuleAll extends Command
             }
         }
 
+        // Adicionar rota automaticamente se a opção estiver habilitada
+        if ($generateRoute) {
+            $this->line('');
+            $this->comment("Adicionando rota para {$model}...");
+
+            $routeResult = $this->addRouteToApiFile($model);
+
+            if ($routeResult === true) {
+                $this->info("✅ Rota adicionada com sucesso ao arquivo routes/api.php!");
+            } else {
+                $this->error("❌ Falha ao adicionar rota: " . $routeResult);
+            }
+        }
+
         $this->line('');
 
         // Checagem final
@@ -155,16 +171,11 @@ class ModuleAll extends Command
 
         // Criamos um array com linhas separadoras entre cada item
         $tableData = [
-            ['Rotas API', "Route::apiResource('" . Str::plural(Str::lower($model)) . "', " . $model . "Controller::class);\n● Adicione no arquivo routes/api.php"],
-            ['', ''],
-            ['Observador', $model . "::observe(" . $model . "Observer::class);\n● Adicione no método boot() do AppServiceProvider ou em outro ServiceProvider apropriado"],
-            ['', ''], 
-            ['Política', $model . "::class => " . $model . "Policy::class,\n● Adicione no array \$policies do AuthServiceProvider"],
-            ['', ''],
-            ['Migração', "php artisan migrate\n● Execute para criar a tabela no banco de dados"],
-            ['', ''],
-            ['Seeder', "php artisan db:seed --class=" . $model . "Seeder\n● Execute para popular a tabela com dados iniciais"],
-            ['', ''],
+            ['Rotas API', "Route::apiResource('" . Str::plural(Str::lower($model)) . "', " . $model . "Controller::class);\n● ✅ Já adicionado ao arquivo routes/api.php\n-------------------------------------------"],
+            ['Observador', $model . "::observe(" . $model . "Observer::class);\n● Adicione no método boot() do AppServiceProvider ou em outro ServiceProvider apropriado\n-------------------------------------------"],
+            ['Política', $model . "::class => " . $model . "Policy::class,\n● Adicione no array \$policies do AuthServiceProvider\n-------------------------------------------"],
+            ['Migração', "php artisan migrate\n● Execute para criar a tabela no banco de dados\n-------------------------------------------"],
+            ['Seeder', "php artisan db:seed --class=" . $model . "Seeder\n● Execute para popular a tabela com dados iniciais\n-------------------------------------------"],
             ['Documentação API', "php artisan l5-swagger:generate\n● Execute para gerar/atualizar a documentação da API"]
         ];
 
@@ -174,6 +185,105 @@ class ModuleAll extends Command
         $this->comment('Acesse a documentação em: /api/documentation');
 
         return 0;
+    }
+
+    /**
+     * Adiciona a rota API Resource ao arquivo routes/api.php
+     *
+     * @param string $model Nome do modelo
+     * @return bool|string True se sucesso, mensagem de erro se falha
+     */
+    protected function addRouteToApiFile($model)
+    {
+        $apiRoutesPath = base_path('routes/api.php');
+
+        // Verificar se o arquivo existe
+        if (!File::exists($apiRoutesPath)) {
+            return "Arquivo routes/api.php não encontrado";
+        }
+
+        // Ler o conteúdo atual do arquivo
+        $contents = File::get($apiRoutesPath);
+
+        // Preparar o namespace do controller
+        $controllerNamespace = "App\\Http\\Controllers\\{$model}Controller";
+        $controllerImport = "use {$controllerNamespace};";
+
+        // Verificar se a importação já existe
+        $importExists = Str::contains($contents, $controllerImport);
+
+        // Montar a linha da rota
+        $routeLine = "Route::apiResource('" . Str::plural(Str::lower($model)) . "', " . $model . "Controller::class);";
+
+        // Verificar se a rota já existe
+        if (Str::contains($contents, $routeLine)) {
+            return "A rota já existe no arquivo";
+        }
+
+        // Se a importação não existe, adiciona ela
+        if (!$importExists) {
+            // Encontrar último use antes do Route::
+            $lastUsePos = -1;
+            $useMatches = [];
+            preg_match_all('/^use .+;$/m', $contents, $useMatches);
+
+            if (!empty($useMatches[0])) {
+                $lastUse = end($useMatches[0]);
+                $lastUsePos = strrpos($contents, $lastUse) + strlen($lastUse);
+
+                // Inserir após o último use
+                $contents = substr($contents, 0, $lastUsePos) . "\n" . $controllerImport . substr($contents, $lastUsePos);
+            } else {
+                // Se não encontrou nenhum use, procura pelo final do namespace
+                $namespaceEndPos = strpos($contents, ";");
+                if ($namespaceEndPos !== false) {
+                    $contents = substr($contents, 0, $namespaceEndPos + 1) . "\n\n" . $controllerImport . substr($contents, $namespaceEndPos + 1);
+                } else {
+                    // Se nem namespace tem, adiciona depois do <?php
+                    $phpPos = strpos($contents, "<?php");
+                    if ($phpPos !== false) {
+                        $contents = substr($contents, 0, $phpPos + 5) . "\n\n" . $controllerImport . substr($contents, $phpPos + 5);
+                    }
+                }
+            }
+        }
+
+        // Encontrar o final do arquivo para adicionar a rota
+        // Vamos procurar o último middleware()->name()->group() ou o último ponto e vírgula
+        $middlewareGroupEndPos = strrpos($contents, "});");
+        $lastSemicolon = strrpos($contents, ";");
+
+        // Determinar onde colocar a nova rota
+        $insertPos = $middlewareGroupEndPos !== false ? $middlewareGroupEndPos + 2 : $lastSemicolon + 1;
+
+        // Verificar se não estamos inserindo dentro de algum fechamento
+        // Conta abertura e fechamento de chaves até o ponto de inserção
+        $openCount = substr_count(substr($contents, 0, $insertPos), "{");
+        $closeCount = substr_count(substr($contents, 0, $insertPos), "}");
+
+        // Se houver mais aberturas que fechamentos, estamos dentro de algum bloco
+        if ($openCount > $closeCount) {
+            // Neste caso, procure o final do arquivo
+            $insertPos = strlen($contents);
+        }
+
+        // Adiciona um comentário explicativo e formatação adequada
+        if (substr($contents, $insertPos - 1, 1) !== "\n") {
+            $routeLine = "\n\n// Rota para " . $model . "\n" . $routeLine;
+        } else {
+            $routeLine = "\n// Rota para " . $model . "\n" . $routeLine;
+        }
+
+        // Inserir a nova rota na posição encontrada
+        $newContents = substr($contents, 0, $insertPos) . $routeLine . substr($contents, $insertPos);
+
+        // Salvar o arquivo
+        try {
+            File::put($apiRoutesPath, $newContents);
+            return true;
+        } catch (\Exception $e) {
+            return "Erro ao salvar o arquivo: " . $e->getMessage();
+        }
     }
 
     /**
