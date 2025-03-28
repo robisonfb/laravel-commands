@@ -25,8 +25,7 @@ class {modelName}Collection extends ResourceCollection
         return [
             'data' => $this->collection,
             'links' => [
-                'self' => route('{modelNamePluralLowerCase}.index'),
-                'create' => route('{modelNamePluralLowerCase}.create'),
+                'self' => route('api.{modelNamePluralLowerCase}.index'),
             ],
         ];
     }
