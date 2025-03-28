@@ -52,7 +52,7 @@ class DummyClass extends Controller
             // Verificar se algum resultado foi encontrado
             if (${modelNamePluralLowerCase}->isEmpty()) {
                 return response()->json([
-                    'message' => __('messages.no_results_found', ['model' => '{modelNamePluralLowerCase}']),
+                    'message' => __('No {modelNamePluralLowerCase} results found'),
                     'data' => []
                 ], Response::HTTP_OK);
             }
@@ -64,7 +64,7 @@ class DummyClass extends Controller
         } catch (\Exception $e) {
             Log::error('Erro ao buscar {modelNamePluralLowerCase}: ' . $e->getMessage());
             return response()->json([
-                'message' => __('messages.failed_to_fetch', ['model' => '{modelNamePluralLowerCase}']),
+                'message' => __('Failed to fetch {modelNamePluralLowerCase}'),
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -104,7 +104,7 @@ class DummyClass extends Controller
 
             Log::error('Erro ao criar {modelNameLowerCase}: ' . $e->getMessage());
             return response()->json([
-                'message' => __('messages.failed_to_create', ['model' => '{modelNameLowerCase}']),
+                'message' => __('Failed to create {modelNameLowerCase}'),
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -129,12 +129,12 @@ class DummyClass extends Controller
                 ->setStatusCode(Response::HTTP_OK);
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => __('messages.model_not_found', ['model' => '{modelName}'])
+                'message' => __('{modelName} not found')
             ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
             Log::error('Erro ao buscar {modelNameLowerCase}: ' . $e->getMessage());
             return response()->json([
-                'message' => __('messages.failed_to_fetch', ['model' => '{modelNameLowerCase}']),
+                'message' => __('Failed to fetch {modelNameLowerCase}'),
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -212,14 +212,14 @@ class DummyClass extends Controller
         } catch (ModelNotFoundException $e) {
             DB::rollBack();
             return response()->json([
-                'message' => __('messages.model_not_found', ['model' => '{modelName}'])
+                'message' => __('{modelName} not found')
             ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
             DB::rollBack();
 
             Log::error('Erro ao atualizar {modelNameLowerCase}: ' . $e->getMessage());
             return response()->json([
-                'message' => __('messages.failed_to_update', ['model' => '{modelNameLowerCase}']),
+                'message' => __('Failed to update {modelNameLowerCase}'),
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -256,14 +256,14 @@ class DummyClass extends Controller
         } catch (ModelNotFoundException $e) {
             DB::rollBack();
             return response()->json([
-                'message' => __('messages.model_not_found', ['model' => '{modelName}'])
+                'message' => __('{modelName} not found')
             ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
             DB::rollBack();
 
             Log::error('Erro ao excluir {modelNameLowerCase}: ' . $e->getMessage());
             return response()->json([
-                'message' => __('messages.failed_to_delete', ['model' => '{modelNameLowerCase}']),
+                'message' => __('Failed to delete {modelNameLowerCase}'),
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -298,7 +298,7 @@ class DummyClass extends Controller
             // Verifica se a coluna solicitada está disponível
             if (!in_array($column, $availableColumns)) {
                 return response()->json([
-                    'message' => __('messages.invalid_column'),
+                    'message' => __('Invalid column'),
                     'available_columns' => $availableColumns
                 ], Response::HTTP_BAD_REQUEST);
             }
@@ -309,7 +309,7 @@ class DummyClass extends Controller
                 // Verifica se a coluna solicitada é válida (medida de segurança para SQL Injection)
                 if (!in_array($column, Schema::getColumnListing('{modelNamePluralLowerCase}'))) {
                     return response()->json([
-                        'message' => __('messages.invalid_column')
+                        'message' => __('Invalid column')
                     ], Response::HTTP_BAD_REQUEST);
                 }
 
@@ -337,7 +337,7 @@ class DummyClass extends Controller
             // Verificar se algum resultado foi encontrado
             if (${modelNamePluralLowerCase}->isEmpty()) {
                 return response()->json([
-                    'message' => __('messages.no_results_found', ['model' => '{modelNamePluralLowerCase}']),
+                    'message' => __('No {modelNamePluralLowerCase} results found'),
                     'data' => []
                 ], Response::HTTP_OK);
             }
@@ -347,13 +347,13 @@ class DummyClass extends Controller
                 ->setStatusCode(Response::HTTP_OK);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'message' => __('messages.validation_error'),
+                'message' => __('Validation error'),
                 'errors' => $e->errors()
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (\Exception $e) {
             Log::error('Erro ao pesquisar {modelNamePluralLowerCase}: ' . $e->getMessage());
             return response()->json([
-                'message' => __('messages.failed_to_search', ['model' => '{modelNamePluralLowerCase}']),
+                'message' => __('Failed to search {modelNamePluralLowerCase}'),
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
