@@ -68,7 +68,7 @@ class ModuleAll extends Command
             ['Model', 'module:model', true],
             ['Migration', 'module:migration', true],
             ['Factory', 'module:factory', true],
-            ['Observer', 'module:observer', true],
+            ['Observer', 'module:observer', false],
             ['Policy', 'module:policy', true],
             ['Seeder', 'module:seeder', false],
             ['Controller', 'module:controller', false],
@@ -76,7 +76,7 @@ class ModuleAll extends Command
             ['Update Request', 'module:update-request', false],
             ['Resource', 'module:resource', false],
             ['Collection', 'module:collection', false],
-            ['Test', 'module:test', true]
+            ['Test', 'module:test', false],
         ];
 
         $this->line('🔨 Criando componentes do módulo ' . $model . '...');
