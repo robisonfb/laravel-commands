@@ -147,6 +147,18 @@ class ModuleAll extends Command
 
         $this->line('');
 
+        // Gerar coleção do Postman
+        $this->comment("Gerando coleção Postman para {$model}...");
+
+        $postmanResult = $this->generatePostmanCollection($model);
+
+        if ($postmanResult === true) {
+            $this->info("✅ Coleção Postman gerada com sucesso em postman/{$model}Collection.json!");
+        } else {
+            $this->error("❌ Falha ao gerar coleção Postman: " . $postmanResult);
+        }
+
+        $this->line('');
         // Checagem final
         if (!empty($failedComponents)) {
             $this->warn('⚠️ Alguns componentes não foram criados devido a erros:');
@@ -180,7 +192,10 @@ class ModuleAll extends Command
             ['Política', $model . "::class => " . $model . "Policy::class,\n● Adicione no array \$policies do AuthServiceProvider\n-------------------------------------------"],
             ['Migração', "php artisan migrate\n● Execute para criar a tabela no banco de dados\n-------------------------------------------"],
             ['Seeder', "php artisan db:seed --class=" . $model . "Seeder\n● Execute para popular a tabela com dados iniciais\n-------------------------------------------"],
-            ['Documentação API', "php artisan l5-swagger:generate\n● Execute para gerar/atualizar a documentação da API"],
+            ['Coleção Postman', "Importe o arquivo postman/{$model}Collection.json no Postman\n● A coleção já foi gerada com todos os endpoints do recurso {$model}\n-------------------------------------------"],
+
+            ['Testes', "php artisan test\n● Execute para rodar os testes do módulo\n-------------------------------------------"],
+            ['Limpeza', "php artisan module:clean\n● Limpa arquivos temporários e caches do módulo\n-------------------------------------------"],
         ];
 
         $this->table(['Tarefa', 'Comando / Instruções'], $tableData);
@@ -336,5 +351,295 @@ class ModuleAll extends Command
             'issues'     => $issues,
             'suggestion' => $suggestion,
         ];
+    }
+
+    /**
+     * Gera um arquivo de coleção do Postman para as rotas do modelo
+     *
+     * @param string $model Nome do modelo
+     * @return bool|string True se sucesso, mensagem de erro se falha
+     */
+    protected function generatePostmanCollection($model)
+    {
+        try {
+            // Diretório para armazenar as coleções do Postman
+            $directory = base_path('postman');
+
+            // Criar o diretório se não existir
+            if (!File::exists($directory)) {
+                File::makeDirectory($directory, 0755, true);
+            }
+
+            // Nome do arquivo de saída
+            $fileName = $directory . '/' . $model . 'Collection.json';
+
+            // Obter o nome da tabela (plural e em minúsculas)
+            $resourceName = Str::plural(Str::lower($model));
+
+            // Definir URL base (pode ser configurável)
+            $baseUrl = "{{base_url}}/api";
+
+            // Criar a estrutura da coleção do Postman
+            $collection = [
+                'info' => [
+                    'name' => "$model API",
+                    '_postman_id' => Str::uuid()->toString(),
+                    'description' => "Coleção de endpoints para o recurso $model",
+                    'schema' => 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json'
+                ],
+                'variable' => [
+                    [
+                        'key' => 'base_url',
+                        'value' => 'http://localhost:8000',
+                        'type' => 'string'
+                    ]
+                ],
+                'item' => [
+                    // GET - Listar todos
+                    [
+                        'name' => "Listar todos os $resourceName",
+                        'request' => [
+                            'method' => 'GET',
+                            'header' => [
+                                [
+                                    'key' => 'Accept',
+                                    'value' => 'application/json'
+                                ],
+                                [
+                                    'key' => 'Content-Type',
+                                    'value' => 'application/json'
+                                ]
+                            ],
+                            'url' => [
+                                'raw' => "$baseUrl/$resourceName",
+                                'host' => ["{{base_url}}"],
+                                'path' => ['api', $resourceName]
+                            ],
+                            'description' => "Retorna todos os $resourceName cadastrados"
+                        ],
+                        'response' => []
+                    ],
+
+                    // GET - Obter um específico
+                    [
+                        'name' => "Obter um $model específico",
+                        'request' => [
+                            'method' => 'GET',
+                            'header' => [
+                                [
+                                    'key' => 'Accept',
+                                    'value' => 'application/json'
+                                ],
+                                [
+                                    'key' => 'Content-Type',
+                                    'value' => 'application/json'
+                                ]
+                            ],
+                            'url' => [
+                                'raw' => "$baseUrl/$resourceName/{{id}}",
+                                'host' => ["{{base_url}}"],
+                                'path' => ['api', $resourceName, '{{id}}']
+                            ],
+                            'description' => "Retorna os detalhes de um $model específico"
+                        ],
+                        'response' => []
+                    ],
+
+                    // POST - Criar
+                    [
+                        'name' => "Criar novo $model",
+                        'request' => [
+                            'method' => 'POST',
+                            'header' => [
+                                [
+                                    'key' => 'Accept',
+                                    'value' => 'application/json'
+                                ],
+                                [
+                                    'key' => 'Content-Type',
+                                    'value' => 'application/json'
+                                ]
+                            ],
+                            'url' => [
+                                'raw' => "$baseUrl/$resourceName",
+                                'host' => ["{{base_url}}"],
+                                'path' => ['api', $resourceName]
+                            ],
+                            'body' => [
+                                'mode' => 'raw',
+                                'raw' => $this->generateSampleRequestBody($model),
+                                'options' => [
+                                    'raw' => [
+                                        'language' => 'json'
+                                    ]
+                                ]
+                            ],
+                            'description' => "Cria um novo $model"
+                        ],
+                        'response' => []
+                    ],
+
+                    // PUT - Atualizar
+                    [
+                        'name' => "Atualizar $model existente",
+                        'request' => [
+                            'method' => 'PUT',
+                            'header' => [
+                                [
+                                    'key' => 'Accept',
+                                    'value' => 'application/json'
+                                ],
+                                [
+                                    'key' => 'Content-Type',
+                                    'value' => 'application/json'
+                                ]
+                            ],
+                            'url' => [
+                                'raw' => "$baseUrl/$resourceName/{{id}}",
+                                'host' => ["{{base_url}}"],
+                                'path' => ['api', $resourceName, '{{id}}']
+                            ],
+                            'body' => [
+                                'mode' => 'raw',
+                                'raw' => $this->generateSampleRequestBody($model),
+                                'options' => [
+                                    'raw' => [
+                                        'language' => 'json'
+                                    ]
+                                ]
+                            ],
+                            'description' => "Atualiza um $model existente"
+                        ],
+                        'response' => []
+                    ],
+
+                    // DELETE - Remover
+                    [
+                        'name' => "Remover $model",
+                        'request' => [
+                            'method' => 'DELETE',
+                            'header' => [
+                                [
+                                    'key' => 'Accept',
+                                    'value' => 'application/json'
+                                ]
+                            ],
+                            'url' => [
+                                'raw' => "$baseUrl/$resourceName/{{id}}",
+                                'host' => ["{{base_url}}"],
+                                'path' => ['api', $resourceName, '{{id}}']
+                            ],
+                            'description' => "Remove um $model do sistema"
+                        ],
+                        'response' => []
+                    ]
+                ]
+            ];
+
+            // Salvar o arquivo JSON da coleção
+            File::put($fileName, json_encode($collection, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+            return true;
+        } catch (\Exception $e) {
+            return "Erro ao gerar a coleção do Postman: " . $e->getMessage();
+        }
+    }
+
+    /**
+     * Gera um corpo de requisição de exemplo com base no modelo
+     *
+     * @param string $model Nome do modelo
+     * @return string JSON formatado com exemplo de requisição
+     */
+    protected function generateSampleRequestBody($model)
+    {
+        // Tentar obter os campos da migration do modelo
+        $fields = $this->extractFieldsFromMigration($model);
+
+        // Se não conseguir extrair os campos, usar exemplos genéricos
+        if (empty($fields)) {
+            // Criar corpo genérico baseado no nome do modelo
+            $sampleData = [
+                'name' => 'Exemplo de ' . $model,
+                'description' => 'Descrição de exemplo para ' . $model,
+                // Adicione outros campos genéricos conforme necessário
+            ];
+        } else {
+            $sampleData = [];
+            foreach ($fields as $field => $type) {
+                // Gerar valor de exemplo com base no tipo do campo
+                switch ($type) {
+                    case 'string':
+                        $sampleData[$field] = "Exemplo de $field";
+                        break;
+                    case 'integer':
+                    case 'bigInteger':
+                        $sampleData[$field] = 1;
+                        break;
+                    case 'boolean':
+                        $sampleData[$field] = true;
+                        break;
+                    case 'decimal':
+                    case 'float':
+                    case 'double':
+                        $sampleData[$field] = 10.99;
+                        break;
+                    case 'date':
+                        $sampleData[$field] = date('Y-m-d');
+                        break;
+                    case 'dateTime':
+                        $sampleData[$field] = date('Y-m-d H:i:s');
+                        break;
+                    case 'json':
+                        $sampleData[$field] = ['key' => 'value'];
+                        break;
+                    default:
+                        $sampleData[$field] = "Valor para $field";
+                }
+            }
+        }
+
+        // Remover campos que não devem estar no corpo da requisição
+        unset($sampleData['id']);
+        unset($sampleData['created_at']);
+        unset($sampleData['updated_at']);
+        unset($sampleData['deleted_at']);
+
+        return json_encode($sampleData, JSON_PRETTY_PRINT);
+    }
+
+    /**
+     * Tenta extrair os campos da migration do modelo
+     *
+     * @param string $model Nome do modelo
+     * @return array Associativo com nome do campo => tipo
+     */
+    protected function extractFieldsFromMigration($model)
+    {
+        // Nome da tabela no plural
+        $tableName = Str::plural(Str::snake($model));
+
+        // Procurar o arquivo de migração
+        $migrationFiles = File::glob(database_path('migrations/*_create_' . $tableName . '_table.php'));
+
+        if (empty($migrationFiles)) {
+            return [];
+        }
+
+        // Pegar o arquivo mais recente
+        $migrationFile = end($migrationFiles);
+        $content = File::get($migrationFile);
+
+        // Extrair campos usando expressão regular
+        $fields = [];
+        preg_match_all('/\$table->(\w+)\(\'(\w+)\'\)/', $content, $matches, PREG_SET_ORDER);
+
+        foreach ($matches as $match) {
+            $type = $match[1];
+            $name = $match[2];
+            $fields[$name] = $type;
+        }
+
+        return $fields;
     }
 }
