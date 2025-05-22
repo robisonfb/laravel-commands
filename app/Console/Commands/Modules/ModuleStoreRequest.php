@@ -111,12 +111,68 @@ class ModuleStoreRequest extends GeneratorCommand
             return $name;
         }
 
-        // Adiciona o sufixo "StoreRequest" se ainda não existir
-        if (!Str::endsWith($name, 'StoreRequest')) {
-            $name = $name . 'StoreRequest';
+        // Se já começa com "Store", apenas adiciona o sufixo "Request"
+        if (Str::startsWith($name, 'Store')) {
+            if (!Str::endsWith($name, 'Request')) {
+                $name = $name . 'Request';
+            }
+        }
+        // Se não começa com "Store", adiciona o prefixo "Store" e o sufixo "Request" se necessário
+        else {
+            // Remove o sufixo "Request" se já existir
+            if (Str::endsWith($name, 'Request')) {
+                $name = Str::replaceLast('Request', '', $name);
+            }
+
+            // Adiciona o prefixo "Store"
+            $name = 'Store' . $name;
+
+            // Adiciona o sufixo "Request"
+            if (!Str::endsWith($name, 'Request')) {
+                $name = $name . 'Request';
+            }
         }
 
         return $this->getDefaultNamespace(trim($rootNamespace, '\\')) . '\\' . $name;
+    }
+
+    /**
+     * Obtém o nome simples da classe para gerar
+     *
+     * @return string
+     */
+    protected function getNameInput()
+    {
+        $name = trim($this->argument('name'));
+
+        // Se já começa com "Store", apenas adiciona o sufixo "Request"
+        if (Str::startsWith($name, 'Store')) {
+            if (!Str::endsWith($name, 'Request')) {
+                $name = $name . 'Request';
+            }
+        }
+        // Se não começa com "Store", formata para o padrão "Store{ModelName}Request"
+        else {
+            // Remove o sufixo "Request" se já existir
+            if (Str::endsWith($name, 'Request')) {
+                $name = Str::replaceLast('Request', '', $name);
+            }
+
+            // Remove o prefixo "Store" se existir para evitar duplicação
+            if (Str::startsWith($name, 'Store')) {
+                $name = Str::replaceFirst('Store', '', $name);
+            }
+
+            // Adiciona o prefixo "Store"
+            $name = 'Store' . $name;
+
+            // Adiciona o sufixo "Request"
+            if (!Str::endsWith($name, 'Request')) {
+                $name = $name . 'Request';
+            }
+        }
+
+        return $name;
     }
 
     /**
@@ -151,9 +207,10 @@ class ModuleStoreRequest extends GeneratorCommand
     {
         $modelName = $this->getNameInput();
 
-        // Remove 'StoreRequest' do final se estiver presente
-        if (Str::endsWith($modelName, 'StoreRequest')) {
-            $modelName = Str::replaceLast('StoreRequest', '', $modelName);
+        // Remove o prefixo 'Store' e o sufixo 'Request' para obter apenas o nome do modelo
+        if (Str::startsWith($modelName, 'Store') && Str::endsWith($modelName, 'Request')) {
+            $modelName = Str::replaceLast('Request', '', $modelName);
+            $modelName = Str::replaceFirst('Store', '', $modelName);
         }
 
         // Substitui o nome do modelo

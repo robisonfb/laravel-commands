@@ -111,12 +111,68 @@ class ModuleUpdateRequest extends GeneratorCommand
             return $name;
         }
 
-        // Adiciona o sufixo "UpdateRequest" se ainda não existir
-        if (!Str::endsWith($name, 'UpdateRequest')) {
-            $name = $name . 'UpdateRequest';
+        // Se já começa com "Update", apenas adiciona o sufixo "Request"
+        if (Str::startsWith($name, 'Update')) {
+            if (!Str::endsWith($name, 'Request')) {
+                $name = $name . 'Request';
+            }
+        }
+        // Se não começa com "Update", adiciona o prefixo "Update" e o sufixo "Request" se necessário
+        else {
+            // Remove o sufixo "Request" se já existir
+            if (Str::endsWith($name, 'Request')) {
+                $name = Str::replaceLast('Request', '', $name);
+            }
+
+            // Adiciona o prefixo "Update"
+            $name = 'Update' . $name;
+
+            // Adiciona o sufixo "Request"
+            if (!Str::endsWith($name, 'Request')) {
+                $name = $name . 'Request';
+            }
         }
 
         return $this->getDefaultNamespace(trim($rootNamespace, '\\')) . '\\' . $name;
+    }
+
+    /**
+     * Obtém o nome simples da classe para gerar
+     *
+     * @return string
+     */
+    protected function getNameInput()
+    {
+        $name = trim($this->argument('name'));
+
+        // Se já começa com "Update", apenas adiciona o sufixo "Request"
+        if (Str::startsWith($name, 'Update')) {
+            if (!Str::endsWith($name, 'Request')) {
+                $name = $name . 'Request';
+            }
+        }
+        // Se não começa com "Update", formata para o padrão "Update{ModelName}Request"
+        else {
+            // Remove o sufixo "Request" se já existir
+            if (Str::endsWith($name, 'Request')) {
+                $name = Str::replaceLast('Request', '', $name);
+            }
+
+            // Remove o prefixo "Update" se existir para evitar duplicação
+            if (Str::startsWith($name, 'Update')) {
+                $name = Str::replaceFirst('Update', '', $name);
+            }
+
+            // Adiciona o prefixo "Update"
+            $name = 'Update' . $name;
+
+            // Adiciona o sufixo "Request"
+            if (!Str::endsWith($name, 'Request')) {
+                $name = $name . 'Request';
+            }
+        }
+
+        return $name;
     }
 
     /**
@@ -151,9 +207,10 @@ class ModuleUpdateRequest extends GeneratorCommand
     {
         $modelName = $this->getNameInput();
 
-        // Remove 'UpdateRequest' do final se estiver presente
-        if (Str::endsWith($modelName, 'UpdateRequest')) {
-            $modelName = Str::replaceLast('UpdateRequest', '', $modelName);
+        // Remove o prefixo 'Update' e o sufixo 'Request' para obter apenas o nome do modelo
+        if (Str::startsWith($modelName, 'Update') && Str::endsWith($modelName, 'Request')) {
+            $modelName = Str::replaceLast('Request', '', $modelName);
+            $modelName = Str::replaceFirst('Update', '', $modelName);
         }
 
         // Substitui o nome do modelo
