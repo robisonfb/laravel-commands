@@ -7,7 +7,6 @@ namespace App\Http\Requests\Profile;
 use App\Trait\HttpResponses;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Auth;
 
 class UpdateProfileRequest extends FormRequest
@@ -32,7 +31,7 @@ class UpdateProfileRequest extends FormRequest
 
     protected function failedValidation(Validator $validator)
     {
-        throw new HttpResponseException(
+        throw new HttpResponses(
             $this->error($validator->errors()->toArray(), __('Invalid or missing data'), 400)
         );
     }

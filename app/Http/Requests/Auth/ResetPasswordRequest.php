@@ -4,14 +4,17 @@ declare(strict_types = 1);
 
 namespace App\Http\Requests\v1;
 
-use App\Enums\HttpResponseStatus;
+use App\Trait\HttpResponses;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+
 use Illuminate\Validation\Rules\Password;
 
 class ResetPasswordRequest extends FormRequest
 {
+    use HttpResponses;
+
     public function authorize(): bool
     {
         return true;
@@ -29,11 +32,7 @@ class ResetPasswordRequest extends FormRequest
     protected function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(
-            response()->json([
-                'status'  => HttpResponseStatus::ERROR,
-                'message' => 'Invalid or missing data',
-                'errors'  => $validator->errors()->toArray(),
-            ], 400)
+            $this->error($validator->errors()->toArray(), __('Invalid or missing data'), 400)
         );
     }
 }

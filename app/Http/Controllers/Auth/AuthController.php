@@ -25,10 +25,10 @@ class AuthController extends Controller
 
         $user = User::where('email', $credentials['email'])->first();
 
-        return $this->success([
-            'user'         => $user,
-            'access_token' => $user->createToken("Token of " . $user->name)->plainTextToken,
-        ]);
+        $user->access_token = $user->createToken("Token of " . $user->name)->plainTextToken;
+
+        return $this->success($user, __('Successfully logged in'));
+
     }
 
     public function register(RegisterUserRequest $request)
@@ -44,11 +44,9 @@ class AuthController extends Controller
         // Dispara o evento Registered que enviará o email de verificação
         event(new Registered($user));
 
-        return $this->success([
-            "user"         => $user,
-            "access_token" => $user->createToken("Token of " . $user->name)->plainTextToken,
-            "message"      => __('A verification email has been sent to your email address.'),
-        ], "Registered!", 200);
+        $user->access_token = $user->createToken("Token of " . $user->name)->plainTextToken;
+
+        return $this->success($user, __('A verification email has been sent to your email address.'), 200);
     }
 
     public function forgotPassword(Request $request): JsonResponse
@@ -96,15 +94,12 @@ class AuthController extends Controller
         return $this->error([], __($status), 400);
     }
 
-    /**
-     * @authenticated
-     */
     public function logout()
     {
         /** @var User $user */
         $user = Auth::user();
         $user->tokens()->delete();
 
-        return $this->success([], 'User logged out successfully');
+        return $this->success([], __('User logged out successfully'));
     }
 }

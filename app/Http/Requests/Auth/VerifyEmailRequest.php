@@ -3,10 +3,15 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\User;
+use App\Trait\HttpResponses;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class VerifyEmailRequest extends FormRequest
 {
+    use HttpResponses;
+
     public function authorize(): bool
     {
         // Find the user by ID from the route parameter
@@ -41,5 +46,12 @@ class VerifyEmailRequest extends FormRequest
         if (!$this->user()->hasVerifiedEmail()) {
             $this->user()->markEmailAsVerified();
         }
+    }
+
+    protected function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(
+            $this->error($validator->errors()->toArray(), __('Invalid or missing data'), 400)
+        );
     }
 }
