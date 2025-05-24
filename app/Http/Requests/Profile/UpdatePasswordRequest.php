@@ -4,18 +4,20 @@ declare(strict_types = 1);
 
 namespace App\Http\Requests\Profile;
 
-use App\Enums\HttpResponseStatus;
-use App\Rules\CorrectPassword;
+use App\Trait\HttpResponses;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
 
 class UpdatePasswordRequest extends FormRequest
 {
+    use HttpResponses;
+
     public function authorize(): bool
     {
-        return (int) $this->user()?->id === (int) $this->route('user')?->id; // @phpstan-ignore-line
+        return Auth::check();
     }
 
     /**
@@ -24,7 +26,7 @@ class UpdatePasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'old_password' => ['required', new CorrectPassword()],
+            'old_password' => ['required', ],
             'new_password' => ['required', 'max:255', Password::min(8)->mixedCase()->letters()->numbers()->symbols()],
         ];
     }
@@ -32,11 +34,7 @@ class UpdatePasswordRequest extends FormRequest
     protected function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(
-            response()->json([
-                'status'  => HttpResponseStatus::ERROR,
-                'message' => 'Invalid or missing data',
-                'errors'  => $validator->errors()->toArray(),
-            ], 400)
+            $this->error($validator->errors()->toArray(), __('Invalid or missing data'), 400)
         );
     }
 }

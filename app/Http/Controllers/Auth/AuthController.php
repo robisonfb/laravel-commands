@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\{LoginUserRequest, RegisterUserRequest};
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
-use Illuminate\Support\Facades\{Auth, Hash};
+use Illuminate\Auth\Events\{PasswordReset, Registered};
+use Illuminate\Http\{JsonResponse, Request};
+use Illuminate\Support\Facades\{Auth, Hash, Password};
+use Illuminate\Support\Str;
 
 /**
  * @group Authentication
@@ -47,6 +49,51 @@ class AuthController extends Controller
             "access_token" => $user->createToken("Token of " . $user->name)->plainTextToken,
             "message"      => __('A verification email has been sent to your email address.'),
         ], "Registered!", 200);
+    }
+
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
+
+        if ($status === Password::RESET_LINK_SENT) {
+            return $this->success([], __($status), 200);
+        }
+
+        return $this->error([], __($status), 400);
+    }
+
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'token'    => ['required'],
+            'email'    => ['required', 'email'],
+            'password' => ['required', 'min:8', 'confirmed'],
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                ])->setRememberToken(Str::random(60));
+
+                $user->save();
+
+                event(new PasswordReset($user));
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return $this->success([], __($status));
+        }
+
+        return $this->error([], __($status), 400);
     }
 
     /**

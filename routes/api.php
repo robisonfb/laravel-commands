@@ -12,6 +12,9 @@ Route::prefix('/v1')
         Route::post('/auth/register', [AuthController::class, 'register']);
         Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
+        Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('guest');
+        Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->name('password.reset');
+
         Route::patch('/profile/update', [ProfileController::class, 'update'])->middleware('auth:sanctum');
         Route::patch('/profile/update-password', [ProfileController::class, 'updatePassword'])->middleware('auth:sanctum');
         Route::get('/profile', [ProfileController::class, 'show'])->middleware('auth:sanctum');
