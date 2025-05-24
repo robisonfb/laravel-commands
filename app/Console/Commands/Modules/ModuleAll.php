@@ -152,6 +152,7 @@ class ModuleAll extends Command
 
         // Chamar o comando module:postman
         $postmanCommand = "module:postman {$model}";
+
         if ($this->option('force')) {
             $postmanCommand .= " --force";
         }
@@ -169,6 +170,7 @@ class ModuleAll extends Command
         }
 
         $this->line('');
+
         // Checagem final
         if (!empty($failedComponents)) {
             $this->warn('⚠️ Alguns componentes não foram criados devido a erros:');

@@ -51,11 +51,13 @@ class ModulePostman extends Command
 
         if (File::exists($collectionPath) && !$this->option('force')) {
             $this->error($this->type . ' já existe! Use --force para sobrescrever.');
+
             return self::ERROR_ALREADY_EXISTS;
         }
 
         // Criar diretório se não existir
         $directory = base_path('postman');
+
         if (!File::exists($directory)) {
             File::makeDirectory($directory, 0755, true);
             $this->info('Diretório para coleções Postman criado: ' . $directory);
@@ -66,9 +68,11 @@ class ModulePostman extends Command
 
         if ($result === true) {
             $this->info($this->type . ' criada com sucesso em: postman/' . $model . 'Collection.json');
+
             return 0;
         } else {
             $this->error('Erro ao gerar a coleção Postman: ' . $result);
+
             return 1;
         }
     }
@@ -95,30 +99,30 @@ class ModulePostman extends Command
             $baseUrl = "{{base_url}}/api";
 
             // Verificar se o controlador existe
-            $controllerPath = app_path('Http/Controllers/' . $model . 'Controller.php');
+            $controllerPath   = app_path('Http/Controllers/' . $model . 'Controller.php');
             $controllerExists = File::exists($controllerPath);
 
             // Criar a estrutura da coleção do Postman
             $collection = [
                 'info' => [
-                    'name' => "$model API",
+                    'name'        => "$model API",
                     '_postman_id' => Str::uuid()->toString(),
                     'description' => "Coleção de endpoints para o recurso $model",
-                    'schema' => 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json'
+                    'schema'      => 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
                 ],
                 'variable' => [
                     [
-                        'key' => 'base_url',
+                        'key'   => 'base_url',
                         'value' => 'http://localhost:8000',
-                        'type' => 'string'
+                        'type'  => 'string',
                     ],
                     [
-                        'key' => 'id',
+                        'key'   => 'id',
                         'value' => '1',
-                        'type' => 'string'
-                    ]
+                        'type'  => 'string',
+                    ],
                 ],
-                'item' => []
+                'item' => [],
             ];
 
             // Se o controlador existir, tenta obter os métodos implementados
@@ -128,60 +132,60 @@ class ModulePostman extends Command
                 $controllerContent = File::get($controllerPath);
 
                 // Verifica quais métodos estão implementados
-                $hasIndex = preg_match('/public\s+function\s+index\s*\(/i', $controllerContent);
-                $hasShow = preg_match('/public\s+function\s+show\s*\(/i', $controllerContent);
-                $hasStore = preg_match('/public\s+function\s+store\s*\(/i', $controllerContent);
-                $hasUpdate = preg_match('/public\s+function\s+update\s*\(/i', $controllerContent);
+                $hasIndex   = preg_match('/public\s+function\s+index\s*\(/i', $controllerContent);
+                $hasShow    = preg_match('/public\s+function\s+show\s*\(/i', $controllerContent);
+                $hasStore   = preg_match('/public\s+function\s+store\s*\(/i', $controllerContent);
+                $hasUpdate  = preg_match('/public\s+function\s+update\s*\(/i', $controllerContent);
                 $hasDestroy = preg_match('/public\s+function\s+destroy\s*\(/i', $controllerContent);
 
                 // Adicionar endpoints com base nos métodos encontrados
                 if ($hasIndex) {
                     $endpoints[] = [
-                        'name' => "Listar todos os $resourceName",
-                        'method' => 'GET',
-                        'url' => "$baseUrl/$resourceName",
-                        'path' => ['api', $resourceName],
-                        'description' => "Retorna todos os $resourceName cadastrados"
+                        'name'        => "Listar todos os $resourceName",
+                        'method'      => 'GET',
+                        'url'         => "$baseUrl/$resourceName",
+                        'path'        => ['api', $resourceName],
+                        'description' => "Retorna todos os $resourceName cadastrados",
                     ];
                 }
 
                 if ($hasShow) {
                     $endpoints[] = [
-                        'name' => "Obter um $model específico",
-                        'method' => 'GET',
-                        'url' => "$baseUrl/$resourceName/{{id}}",
-                        'path' => ['api', $resourceName, '{{id}}'],
-                        'description' => "Retorna os detalhes de um $model específico"
+                        'name'        => "Obter um $model específico",
+                        'method'      => 'GET',
+                        'url'         => "$baseUrl/$resourceName/{{id}}",
+                        'path'        => ['api', $resourceName, '{{id}}'],
+                        'description' => "Retorna os detalhes de um $model específico",
                     ];
                 }
 
                 if ($hasStore) {
                     $endpoints[] = [
-                        'name' => "Criar novo $model",
-                        'method' => 'POST',
-                        'url' => "$baseUrl/$resourceName",
-                        'path' => ['api', $resourceName],
-                        'description' => "Cria um novo $model"
+                        'name'        => "Criar novo $model",
+                        'method'      => 'POST',
+                        'url'         => "$baseUrl/$resourceName",
+                        'path'        => ['api', $resourceName],
+                        'description' => "Cria um novo $model",
                     ];
                 }
 
                 if ($hasUpdate) {
                     $endpoints[] = [
-                        'name' => "Atualizar $model existente",
-                        'method' => 'PUT',
-                        'url' => "$baseUrl/$resourceName/{{id}}",
-                        'path' => ['api', $resourceName, '{{id}}'],
-                        'description' => "Atualiza um $model existente"
+                        'name'        => "Atualizar $model existente",
+                        'method'      => 'PUT',
+                        'url'         => "$baseUrl/$resourceName/{{id}}",
+                        'path'        => ['api', $resourceName, '{{id}}'],
+                        'description' => "Atualiza um $model existente",
                     ];
                 }
 
                 if ($hasDestroy) {
                     $endpoints[] = [
-                        'name' => "Remover $model",
-                        'method' => 'DELETE',
-                        'url' => "$baseUrl/$resourceName/{{id}}",
-                        'path' => ['api', $resourceName, '{{id}}'],
-                        'description' => "Remove um $model do sistema"
+                        'name'        => "Remover $model",
+                        'method'      => 'DELETE',
+                        'url'         => "$baseUrl/$resourceName/{{id}}",
+                        'path'        => ['api', $resourceName, '{{id}}'],
+                        'description' => "Remove um $model do sistema",
                     ];
                 }
             }
@@ -190,80 +194,80 @@ class ModulePostman extends Command
             if (empty($endpoints)) {
                 $endpoints = [
                     [
-                        'name' => "Listar todos os $resourceName",
-                        'method' => 'GET',
-                        'url' => "$baseUrl/$resourceName",
-                        'path' => ['api', $resourceName],
-                        'description' => "Retorna todos os $resourceName cadastrados"
+                        'name'        => "Listar todos os $resourceName",
+                        'method'      => 'GET',
+                        'url'         => "$baseUrl/$resourceName",
+                        'path'        => ['api', $resourceName],
+                        'description' => "Retorna todos os $resourceName cadastrados",
                     ],
                     [
-                        'name' => "Obter um $model específico",
-                        'method' => 'GET',
-                        'url' => "$baseUrl/$resourceName/{{id}}",
-                        'path' => ['api', $resourceName, '{{id}}'],
-                        'description' => "Retorna os detalhes de um $model específico"
+                        'name'        => "Obter um $model específico",
+                        'method'      => 'GET',
+                        'url'         => "$baseUrl/$resourceName/{{id}}",
+                        'path'        => ['api', $resourceName, '{{id}}'],
+                        'description' => "Retorna os detalhes de um $model específico",
                     ],
                     [
-                        'name' => "Criar novo $model",
-                        'method' => 'POST',
-                        'url' => "$baseUrl/$resourceName",
-                        'path' => ['api', $resourceName],
-                        'description' => "Cria um novo $model"
+                        'name'        => "Criar novo $model",
+                        'method'      => 'POST',
+                        'url'         => "$baseUrl/$resourceName",
+                        'path'        => ['api', $resourceName],
+                        'description' => "Cria um novo $model",
                     ],
                     [
-                        'name' => "Atualizar $model existente",
-                        'method' => 'PUT',
-                        'url' => "$baseUrl/$resourceName/{{id}}",
-                        'path' => ['api', $resourceName, '{{id}}'],
-                        'description' => "Atualiza um $model existente"
+                        'name'        => "Atualizar $model existente",
+                        'method'      => 'PUT',
+                        'url'         => "$baseUrl/$resourceName/{{id}}",
+                        'path'        => ['api', $resourceName, '{{id}}'],
+                        'description' => "Atualiza um $model existente",
                     ],
                     [
-                        'name' => "Remover $model",
-                        'method' => 'DELETE',
-                        'url' => "$baseUrl/$resourceName/{{id}}",
-                        'path' => ['api', $resourceName, '{{id}}'],
-                        'description' => "Remove um $model do sistema"
-                    ]
+                        'name'        => "Remover $model",
+                        'method'      => 'DELETE',
+                        'url'         => "$baseUrl/$resourceName/{{id}}",
+                        'path'        => ['api', $resourceName, '{{id}}'],
+                        'description' => "Remove um $model do sistema",
+                    ],
                 ];
             }
 
             // Criar os itens da coleção com base nos endpoints
             foreach ($endpoints as $endpoint) {
                 $item = [
-                    'name' => $endpoint['name'],
+                    'name'    => $endpoint['name'],
                     'request' => [
                         'method' => $endpoint['method'],
                         'header' => [
                             [
-                                'key' => 'Accept',
-                                'value' => 'application/json'
-                            ]
+                                'key'   => 'Accept',
+                                'value' => 'application/json',
+                            ],
                         ],
                         'url' => [
-                            'raw' => $endpoint['url'],
+                            'raw'  => $endpoint['url'],
                             'host' => ["{{base_url}}"],
-                            'path' => $endpoint['path']
+                            'path' => $endpoint['path'],
                         ],
-                        'description' => $endpoint['description']
+                        'description' => $endpoint['description'],
                     ],
-                    'response' => []
+                    'response' => [],
                 ];
 
                 // Adicionar Content-Type e body para POST e PUT
                 if (in_array($endpoint['method'], ['POST', 'PUT'])) {
                     $item['request']['header'][] = [
-                        'key' => 'Content-Type',
-                        'value' => 'application/json'
+                        'key'   => 'Content-Type',
+                        'value' => 'application/json',
                     ];
 
                     $item['request']['body'] = [
-                        'mode' => 'raw',
-                        'raw' => $this->generateSampleRequestBody($model),
+                        'mode'    => 'raw',
+                        'raw'     => $this->generateSampleRequestBody($model),
                         'options' => [
                             'raw' => [
-                                'language' => 'json'
-                            ]
-                        ]
+                                'language' => 'json',
+                            ],
+                        ],
                     ];
                 }
 
@@ -294,39 +298,47 @@ class ModulePostman extends Command
         if (empty($fields)) {
             // Criar corpo genérico baseado no nome do modelo
             $sampleData = [
-                'name' => 'Exemplo de ' . $model,
+                'name'        => 'Exemplo de ' . $model,
                 'description' => 'Descrição de exemplo para ' . $model,
-                'active' => true,
-                'created_at' => date('Y-m-d H:i:s')
+                'active'      => true,
+                'created_at'  => date('Y-m-d H:i:s'),
             ];
         } else {
             $sampleData = [];
+
             foreach ($fields as $field => $type) {
                 // Gerar valor de exemplo com base no tipo do campo
                 switch ($type) {
                     case 'string':
                         $sampleData[$field] = "Exemplo de $field";
+
                         break;
                     case 'integer':
                     case 'bigInteger':
                         $sampleData[$field] = 1;
+
                         break;
                     case 'boolean':
                         $sampleData[$field] = true;
+
                         break;
                     case 'decimal':
                     case 'float':
                     case 'double':
                         $sampleData[$field] = 10.99;
+
                         break;
                     case 'date':
                         $sampleData[$field] = date('Y-m-d');
+
                         break;
                     case 'dateTime':
                         $sampleData[$field] = date('Y-m-d H:i:s');
+
                         break;
                     case 'json':
                         $sampleData[$field] = ['key' => 'value'];
+
                         break;
                     default:
                         $sampleData[$field] = "Valor para $field";
@@ -363,15 +375,15 @@ class ModulePostman extends Command
 
         // Pegar o arquivo mais recente
         $migrationFile = end($migrationFiles);
-        $content = File::get($migrationFile);
+        $content       = File::get($migrationFile);
 
         // Extrair campos usando expressão regular
         $fields = [];
         preg_match_all('/\$table->(\w+)\(\'(\w+)\'\)/', $content, $matches, PREG_SET_ORDER);
 
         foreach ($matches as $match) {
-            $type = $match[1];
-            $name = $match[2];
+            $type          = $match[1];
+            $name          = $match[2];
             $fields[$name] = $type;
         }
 
