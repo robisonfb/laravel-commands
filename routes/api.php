@@ -12,15 +12,15 @@ Route::prefix('/v1')
             Route::get('/logs', [LogViewerController::class, 'index']);
         }
 
-        //ROTA: Auth
-        Route::post('/auth/login', [AuthController::class, 'login']);
-        Route::post('/auth/register', [AuthController::class, 'register']);
+        // ROTA: Auth
+        Route::post('/auth/login', [AuthController::class, 'login'])->middleware(['guest', 'throttle:6,1']);
+        Route::post('/auth/register', [AuthController::class, 'register'])->middleware(['guest', 'throttle:6,1']);
         Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
         Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('guest');
         Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->name('password.reset')->middleware('guest');
 
-        //ROTA: e-mail
+        // ROTA: e-mail
         Route::post('/email/resend-verification', [VerifyEmailController::class, 'resendVerificationEmail'])
             ->middleware(['auth:sanctum', 'throttle:6,1'])
             ->name('verification.send');
