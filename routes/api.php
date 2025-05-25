@@ -2,10 +2,8 @@
 
 use App\Http\Controllers\Auth\{AuthController, VerifyEmailChangeController, VerifyEmailController};
 use App\Http\Controllers\Profile\ProfileController;
-use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use Illuminate\Support\Facades\Route;
-
-
+use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
 Route::prefix('/v1')
     ->group(function () {
@@ -33,13 +31,12 @@ Route::prefix('/v1')
             ->middleware(['auth:sanctum', 'throttle:6,1'])
             ->name('email.change');
 
-        Route::get('/email/change/verify/{id}/{hash}', [VerifyEmailChangeController::class, 'verify'])
-            ->middleware('signed')
+        Route::get('/email/change/verify/{id}/{hash}/{new_email}', [VerifyEmailChangeController::class, 'verify'])
+            //->middleware('signed')
             ->name('email.change.verify');
 
         Route::patch('/profile/update', [ProfileController::class, 'update'])->middleware('auth:sanctum');
         Route::patch('/profile/update-password', [ProfileController::class, 'updatePassword'])->middleware('auth:sanctum');
         Route::get('/profile', [ProfileController::class, 'show'])->middleware('auth:sanctum');
-
 
     });

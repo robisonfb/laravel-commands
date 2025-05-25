@@ -21,7 +21,6 @@ class VerifyEmailChange extends Notification
         return ['mail'];
     }
 
-
     protected function verificationUrl($notifiable)
     {
         $hash = sha1($notifiable->getEmailForVerification());
@@ -31,7 +30,7 @@ class VerifyEmailChange extends Notification
             Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60)),
             [
                 'id'        => $notifiable->getKey(),
-                'hash' => $hash,
+                'hash'      => $hash,
                 'new_email' => $this->newEmail,
             ]
         );

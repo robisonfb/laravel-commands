@@ -15,7 +15,7 @@ class VerifyEmailChangeController extends Controller
     {
         $user = User::findOrFail($request->id);
 
-        if (!hash_equals(sha1($request->new_email), $request->hash)) {
+        if (!hash_equals(sha1($user->getEmailForVerification()), $request->hash)) {
             return $this->error([], __('Invalid verification URL.'), 403);
         }
 
