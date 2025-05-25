@@ -8,14 +8,8 @@ use App\Http\Requests\Auth\{VerifyEmailRequest};
 use App\Models\User;
 use Illuminate\Http\{JsonResponse, Request};
 
-/**
- * @group Email verification
- */
 class VerifyEmailController extends Controller
 {
-    /**
-     * Reenvia o email de verificação para o usuário autenticado
-     */
     public function resendVerificationEmail(Request $request): JsonResponse
     {
         /** @var User $user */
@@ -30,9 +24,6 @@ class VerifyEmailController extends Controller
         return $this->success([], __('Verification link sent!'), 200);
     }
 
-    /**
-     * Marca o email do usuário como verificado
-     */
     public function verifyEmailAddress(VerifyEmailRequest $request): JsonResponse
     {
         /** @var User $user */

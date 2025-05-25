@@ -7,22 +7,13 @@ use App\Http\Requests\Profile\{UpdateProfileRequest};
 use App\Models\User;
 use Illuminate\Http\{JsonResponse, Request};
 
-/**
- * @group Profile
- */
 class ProfileController extends Controller
 {
-    /**
-     * @authenticated
-     */
     public function show(Request $request): JsonResponse
     {
-        return $this->success($request->user());
+        return $this->success($request->user(), __('Profile fetched successfully'), 200);
     }
 
-    /**
-     * @authenticated
-     */
     public function update(UpdateProfileRequest $request): JsonResponse
     {
         $validated = $request->validated();

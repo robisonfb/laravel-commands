@@ -10,9 +10,6 @@ use Illuminate\Http\{JsonResponse, Request};
 use Illuminate\Support\Facades\{Auth, Hash, Password};
 use Illuminate\Support\Str;
 
-/**
- * @group Authentication
- */
 class AuthController extends Controller
 {
     public function login(LoginUserRequest $request)
@@ -42,7 +39,7 @@ class AuthController extends Controller
             "password"   => Hash::make($request->password),
         ]);
 
-        // Dispara o evento Registered que enviará o email de verificação
+        // Dispara o evento que enviará o email de verificação
         event(new Registered($user));
 
         $user->access_token = $user->createToken("Token of " . $user->first_name)->plainTextToken;
