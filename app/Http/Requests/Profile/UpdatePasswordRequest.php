@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace App\Http\Requests\Profile;
 
 use App\Trait\HttpResponses;
@@ -20,13 +18,10 @@ class UpdatePasswordRequest extends FormRequest
         return Auth::check();
     }
 
-    /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-            'old_password' => ['required', ],
+            'old_password' => ['required' , 'max:255', 'current_password'],
             'new_password' => ['required', 'max:255', Password::min(8)->mixedCase()->letters()->numbers()->symbols()],
         ];
     }

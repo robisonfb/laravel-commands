@@ -1,8 +1,6 @@
 <?php
 
-declare(strict_types = 1);
-
-namespace App\Http\Requests\v1;
+namespace App\Http\Requests\Auth;
 
 use App\Trait\HttpResponses;
 use Illuminate\Contracts\Validation\Validator;

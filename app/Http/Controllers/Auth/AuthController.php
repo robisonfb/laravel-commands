@@ -25,7 +25,7 @@ class AuthController extends Controller
 
         $user = User::where('email', $credentials['email'])->first();
 
-        $user->access_token = $user->createToken("Token of " . $user->name)->plainTextToken;
+        $user->access_token = $user->createToken("Token of " . $user->first_name)->plainTextToken;
 
         return $this->success($user, __('Successfully logged in'));
 
@@ -36,15 +36,16 @@ class AuthController extends Controller
         $request->validated($request->all());
 
         $user = User::create([
-            "name"     => $request->name,
-            "email"    => $request->email,
-            "password" => Hash::make($request->password),
+            "first_name" => $request->first_name,
+            "last_name"  => $request->last_name,
+            "email"      => $request->email,
+            "password"   => Hash::make($request->password),
         ]);
 
         // Dispara o evento Registered que enviará o email de verificação
         event(new Registered($user));
 
-        $user->access_token = $user->createToken("Token of " . $user->name)->plainTextToken;
+        $user->access_token = $user->createToken("Token of " . $user->first_name)->plainTextToken;
 
         return $this->success($user, __('A verification email has been sent to your email address.'), 200);
     }

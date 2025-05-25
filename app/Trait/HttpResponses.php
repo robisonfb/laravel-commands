@@ -2,14 +2,12 @@
 
 namespace App\Trait;
 
-use App\Enums\HttpResponseStatus;
-
 trait HttpResponses
 {
     protected function success($data, $message = null, $statusCode = 200)
     {
         return response()->json([
-            'status'  => HttpResponseStatus::SUCCESS,
+            'status'  => 'success',
             'message' => $message,
             'data'    => $data,
             'meta'    => [
@@ -21,7 +19,7 @@ trait HttpResponses
     protected function error($data, $message = null, $statusCode)
     {
         return response()->json([
-            'status'  => HttpResponseStatus::ERROR,
+            'status'  => 'error',
             'message' => $message,
             'data'    => $data,
             'meta'    => [

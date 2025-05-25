@@ -20,9 +20,10 @@ class RegisterUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'     => ['required', 'string', 'min:5', 'max:50', 'regex:/^[a-zA-Z\s]+$/'],
-            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'max:255', Password::min(8)->mixedCase()->letters()->numbers()->symbols()],
+            'first_name' => ['required', 'string', 'min:5', 'max:50', 'regex:/^[a-zA-Z\s]+$/'],
+            'last_name'  => ['required', 'string', 'min:5', 'max:50', 'regex:/^[a-zA-Z\s]+$/'],
+            'email'      => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password'   => ['required', 'max:255', Password::min(8)->mixedCase()->letters()->numbers()->symbols()],
         ];
     }
 

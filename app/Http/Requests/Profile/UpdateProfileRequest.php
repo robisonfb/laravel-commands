@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace App\Http\Requests\Profile;
 
 use App\Trait\HttpResponses;
@@ -18,14 +16,11 @@ class UpdateProfileRequest extends FormRequest
         return Auth::check();
     }
 
-    /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-            'name'  => ['sometimes', 'max:255'],
-            'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,' . $this->route('user')?->id], // @phpstan-ignore-line
+            'first_name' => ['sometimes', 'max:255'],
+            'last_name'  => ['sometimes', 'max:255'],
         ];
     }
 
