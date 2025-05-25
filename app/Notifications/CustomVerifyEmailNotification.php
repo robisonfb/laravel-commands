@@ -11,23 +11,23 @@ class CustomVerifyEmailNotification extends VerifyEmail
 {
     protected function verificationUrl($notifiable)
     {
+        $hash = sha1($notifiable->getEmailForVerification());
+
         $url = URL::temporarySignedRoute(
             'verification.verify',
             Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60)),
             [
                 'id'   => $notifiable->getKey(),
-                'hash' => sha1($notifiable->getEmailForVerification()),
+                'hash' => $hash,
             ]
         );
 
-        // Extrair o token e o hash da URL gerada
         $parsedUrl = parse_url($url);
         parse_str($parsedUrl['query'] ?? '', $params);
 
-        // Construir a URL do frontend
         return config('app.frontend_url') . '/verify-email?' . http_build_query([
             'id'        => $notifiable->getKey(),
-            'hash'      => $params['hash'] ?? '',
+            'hash'      => $hash,
             'expires'   => $params['expires'] ?? '',
             'signature' => $params['signature'] ?? '',
         ]);

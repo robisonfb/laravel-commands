@@ -33,7 +33,7 @@ Route::prefix('/v1')
             ->middleware(['auth:sanctum', 'throttle:6,1'])
             ->name('email.change');
 
-        Route::get('/email/change/verify/{id}', [VerifyEmailChangeController::class, 'verify'])
+        Route::get('/email/change/verify/{id}/{hash}', [VerifyEmailChangeController::class, 'verify'])
             ->middleware('signed')
             ->name('email.change.verify');
 
