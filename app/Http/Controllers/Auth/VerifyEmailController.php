@@ -6,7 +6,8 @@ use App\Http\Controllers\Controller;
 
 use App\Http\Requests\Auth\{VerifyEmailRequest};
 use App\Models\User;
-use Illuminate\Http\{JsonResponse, Request};
+use Illuminate\Http\{JsonResponse, RedirectResponse, Request};
+use Illuminate\Support\Facades\Redirect;
 
 class VerifyEmailController extends Controller
 {
@@ -24,17 +25,34 @@ class VerifyEmailController extends Controller
         return $this->success([], __('Verification link sent!'), 200);
     }
 
-    public function verifyEmailAddress(VerifyEmailRequest $request): JsonResponse
+    public function verifyEmailAddress(VerifyEmailRequest $request): RedirectResponse
     {
+        /** @var string $redirectBase */
+        $redirectBase = rtrim(config('app.frontend_url'), '/') . '/verify-email';
+
         /** @var User $user */
         $user = $request->user();
 
-        if ($user->hasVerifiedEmail()) {
-            return $this->success([], __('Email already verified'), 400);
+        if (!$user) {
+            return Redirect::to($redirectBase . '?status=error&message=' . urlencode(__('User not found')));
         }
 
-        $user->markEmailAsVerified();
+        if ($user->hasVerifiedEmail()) {
+            return Redirect::to($redirectBase . '?status=error&message=' . urlencode('Email already verified'));
+        }
 
-        return $this->success([], __('Email verified successfully'), 200);
+        if (!hash_equals((string) $request->hash, sha1($user->getEmailForVerification()))) {
+            return Redirect::to($redirectBase . '?status=error&message=' . urlencode('Invalid or expired verification link'));
+        }
+
+        if ($user->markEmailAsVerified()) {
+
+            $user->sendEmailWelcomeNotification($user->email);
+
+            return Redirect::to($redirectBase . '?status=success&message=' . urlencode('Email verified successfully'));
+        }
+
+        return Redirect::to($redirectBase . '?status=error&message=' . urlencode('Unable to verify email'));
+
     }
 }

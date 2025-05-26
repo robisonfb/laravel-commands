@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             'first_name' => 'Robison',
             'last_name'  => 'Borges',
             'email'      => 'robison@sevenclick.com.br',
+            'password'   => bcrypt('12345678'),
         ]);
     }
 }

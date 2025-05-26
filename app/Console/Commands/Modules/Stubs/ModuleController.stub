@@ -42,19 +42,10 @@ class DummyClass extends Controller
 
             // Chave de cache única baseada nos parâmetros
             $page = $request->query('page', 1);
-            $cacheKey = "{modelNamePluralLowerCase}_page_{$page}_perpage_{$perPage}_sort_{$sortBy}_order_{$sortOrder}";
-
-            // Buscar resultados do cache ou gerar novos
-            ${modelNamePluralLowerCase} = Cache::remember($cacheKey, 3600, function () use ($perPage, $sortBy, $sortOrder) {
-                return {modelName}::orderBy($sortBy, $sortOrder)->paginate($perPage);
-            });
 
             // Se não houver resultados
             if (${modelNamePluralLowerCase}->isEmpty()) {
-                return response()->json([
-                    'message' => __('No {modelNamePluralLowerCase} results found'),
-                    'data' => []
-                ], Response::HTTP_OK);
+                return $this->success([], __('No {modelNamePluralLowerCase} results found'), 200);
             }
 
             // Retornar coleção de recursos
@@ -62,17 +53,10 @@ class DummyClass extends Controller
                 ->response()
                 ->setStatusCode(Response::HTTP_OK);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'message' => __('Invalid pagination or sorting parameters'),
-                'errors' => $e->errors()
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (\Exception $e) {
             Log::error('Erro ao buscar {modelNamePluralLowerCase}: ' . $e->getMessage());
-            return response()->json([
-                'message' => __('Failed to fetch {modelNamePluralLowerCase}'),
-                'error' => $e->getMessage()
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+
+            return $this->error([$e->getMessage()], __('Failed to fetch {modelNamePluralLowerCase}'), 500);
         }
     }
 
