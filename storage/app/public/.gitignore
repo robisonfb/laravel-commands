@@ -1,2 +1,4 @@
 *
 !.gitignore
+# exceções para versionar o logo de email
+!email/*
