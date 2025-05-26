@@ -42,6 +42,7 @@ class VerifyEmailChange extends Notification
 
         return (new MailMessage())
             ->subject('Email Change Check')
+            ->greeting('Hello ' . $notifiable->first_name . '!')
             ->line('Please click the button below to verify your new email address.')
             ->action('Verify Email', $verificationUrl)
             ->line('If you did not request this change, no action is required.');

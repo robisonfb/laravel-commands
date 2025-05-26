@@ -30,8 +30,13 @@ class VerifyEmailController extends Controller
         /** @var string $redirectBase */
         $redirectBase = rtrim(config('app.frontend_url'), '/') . '/verify-email';
 
-        /** @var User $user */
-        $user = $request->user();
+        $userId = $request->route('id');
+        if (!is_numeric($userId)) {
+            return Redirect::to($redirectBase . '?status=error&message=' . urlencode(__('Invalid user ID')));
+        }
+
+        /** @var User|null $user */
+        $user = User::find($userId);
 
         if (!$user) {
             return Redirect::to($redirectBase . '?status=error&message=' . urlencode(__('User not found')));

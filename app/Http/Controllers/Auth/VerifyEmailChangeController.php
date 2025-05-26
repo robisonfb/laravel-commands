@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Redirect;
 class VerifyEmailChangeController extends Controller
 {
 
-    public function sendVerification(Request $request): JsonResponse
+    public function sendVerificationEmail(Request $request): JsonResponse
     {
         $request->validate([
             'new_email' => ['required', 'email', 'unique:users,email'],
@@ -29,15 +29,16 @@ class VerifyEmailChangeController extends Controller
         /** @var string $redirectBase */
         $redirectBase = rtrim(config('app.frontend_url'), '/') . '/verify-change-email';
 
-        /** @var User $user */
-        $user = $request->user();
+        $userId = $request->route('id');
+        if (!is_numeric($userId)) {
+            return Redirect::to($redirectBase . '?status=error&message=' . urlencode(__('Invalid user ID')));
+        }
+
+        /** @var User|null $user */
+        $user = User::find($userId);
 
         if (!$user) {
             return Redirect::to($redirectBase . '?status=error&message=' . urlencode(__('User not found')));
-        }
-
-        if ($user->hasVerifiedEmail()) {
-            return Redirect::to($redirectBase . '?status=error&message=' . urlencode(__('Email already verified')));
         }
 
         if (!hash_equals((string) $request->hash, sha1($user->getEmailForVerification()))) {

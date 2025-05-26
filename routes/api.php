@@ -29,7 +29,7 @@ Route::prefix('/v1')
             ->middleware(['signed'])
             ->name('verification.verify');
 
-        Route::post('/email/change', [VerifyEmailChangeController::class, 'sendVerification'])
+        Route::post('/email/change', [VerifyEmailChangeController::class, 'sendVerificationEmail'])
             ->middleware(['auth:sanctum', 'throttle:6,1'])
             ->name('email.change');
 

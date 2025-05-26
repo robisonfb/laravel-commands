@@ -16,6 +16,7 @@ class CustomResetPasswordNotification extends ResetPassword
     {
         return (new MailMessage())
             ->subject('Reset Password Notification')
+            ->greeting('Hello ' . $notifiable->first_name . '!')
             ->line('You are receiving this email because we received a password reset request for your account.')
             ->action('Reset Password', $this->resetUrl($notifiable))
             ->line('This password reset link will expire in ' . config('auth.passwords.users.expire') . ' minutes.')
