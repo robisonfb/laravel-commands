@@ -25,7 +25,7 @@ class VerifyEmailChange extends Notification
     {
         $hash = sha1($notifiable->getEmailForVerification());
 
-        $url = URL::temporarySignedRoute(
+        return URL::temporarySignedRoute(
             'email.change.verify',
             Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60)),
             [
@@ -34,17 +34,6 @@ class VerifyEmailChange extends Notification
                 'new_email' => $this->newEmail,
             ]
         );
-
-        $parsedUrl = parse_url($url);
-        parse_str($parsedUrl['query'] ?? '', $params);
-
-        return config('app.frontend_url') . '/verify-email-change?' . http_build_query([
-            'id'        => $notifiable->getKey(),
-            'new_email' => $this->newEmail,
-            'hash'      => $hash,
-            'expires'   => $params['expires'] ?? '',
-            'signature' => $params['signature'] ?? '',
-        ]);
     }
 
     public function toMail($notifiable)

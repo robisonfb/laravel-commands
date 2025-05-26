@@ -33,8 +33,8 @@ Route::prefix('/v1')
             ->middleware(['auth:sanctum', 'throttle:6,1'])
             ->name('email.change');
 
-        Route::get('/email/change/verify/{id}/{hash}', [VerifyEmailChangeController::class, 'verify'])
-            //->middleware('signed') //REVISAR: Este middleware nao esta funcionando para esta rota verificar
+        Route::get('/email/change/verify/{id}/{hash}', [VerifyEmailChangeController::class, 'verifyChangeEmail'])
+            ->middleware('signed')
             ->name('email.change.verify');
 
         // ROTA: Profile

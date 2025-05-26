@@ -38,21 +38,21 @@ class VerifyEmailController extends Controller
         }
 
         if ($user->hasVerifiedEmail()) {
-            return Redirect::to($redirectBase . '?status=error&message=' . urlencode('Email already verified'));
+            return Redirect::to($redirectBase . '?status=error&message=' . urlencode(__('Email already verified')));
         }
 
         if (!hash_equals((string) $request->hash, sha1($user->getEmailForVerification()))) {
-            return Redirect::to($redirectBase . '?status=error&message=' . urlencode('Invalid or expired verification link'));
+            return Redirect::to($redirectBase . '?status=error&message=' . urlencode(__('Invalid or expired verification link')));
         }
 
         if ($user->markEmailAsVerified()) {
 
             $user->sendEmailWelcomeNotification($user->email);
 
-            return Redirect::to($redirectBase . '?status=success&message=' . urlencode('Email verified successfully'));
+            return Redirect::to($redirectBase . '?status=success&message=' . urlencode(__('Email verified successfully')));
         }
 
-        return Redirect::to($redirectBase . '?status=error&message=' . urlencode('Unable to verify email'));
+        return Redirect::to($redirectBase . '?status=error&message=' . urlencode(__('Unable to verify email')));
 
     }
 }
