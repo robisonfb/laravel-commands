@@ -5,41 +5,57 @@ use App\Http\Controllers\Profile\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
-Route::prefix('/v1')
-    ->group(function () {
+// Health Check Route
+Route::get('/', function () {
+    return response()->json([
+        'status' => 200,
+        'message' => 'Welcome to the ' . config('app.name') . ' API, it is working!',
+        'version' => config('app.version'),
+        'clientName' => strtolower(str_replace(' ', '', config('app.name'))),
+    ]);
+});
 
-        if (config('app.log_viewer')) {
-            Route::get('/logs', [LogViewerController::class, 'index']);
-        }
+// API Version 1
+Route::prefix('v1')->group(function () {
 
-        // ROTA: Auth
-        Route::post('/auth/login', [AuthController::class, 'login'])->middleware(['guest', 'throttle:6,1']);
-        Route::post('/auth/register', [AuthController::class, 'register'])->middleware(['guest', 'throttle:6,1']);
-        Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+    // System Routes
+    if (config('app.log_viewer')) {
+        Route::get('logs', [LogViewerController::class, 'index']);
+    }
 
-        Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('guest');
-        Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->name('password.reset')->middleware('guest');
+    // Authentication Routes (Guest only)
+    Route::prefix('auth')->middleware('guest')->group(function () {
+        Route::post('login', [AuthController::class, 'login'])->middleware('throttle:6,1');
+        Route::post('register', [AuthController::class, 'register'])->middleware('throttle:6,1');
 
-        // ROTA: e-mail
-        Route::post('/email/resend-verification', [VerifyEmailController::class, 'resendVerificationEmail'])
-            ->middleware(['auth:sanctum', 'throttle:6,1'])
-            ->name('verification.send');
-
-        Route::get('/email/verify/{id}/{hash}', [VerifyEmailController::class, 'verifyEmailAddress'])
-            ->middleware(['signed'])
-            ->name('verification.verify');
-
-        Route::post('/email/change', [VerifyEmailChangeController::class, 'sendVerificationEmail'])
-            ->middleware(['auth:sanctum', 'throttle:6,1'])
-            ->name('email.change');
-
-        Route::get('/email/change/verify/{id}/{hash}', [VerifyEmailChangeController::class, 'verifyChangeEmail'])
-            ->middleware('signed')
-            ->name('email.change.verify');
-
-        // ROTA: Profile
-        Route::patch('/profile/update', [ProfileController::class, 'update'])->middleware('auth:sanctum');
-        Route::patch('/profile/update-password', [ProfileController::class, 'updatePassword'])->middleware('auth:sanctum');
-        Route::get('/profile', [ProfileController::class, 'show'])->middleware('auth:sanctum');
-
+        Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
+        Route::post('reset-password', [AuthController::class, 'resetPassword'])->name('password.reset');
     });
+
+    // Logout Route (Authenticated only)
+    Route::post('auth/logout', [AuthController::class, 'logout'])
+        ->middleware('auth:sanctum');
+
+    // Email Verification Routes
+    Route::prefix('email')->group(function () {
+        // Guest routes (signed URLs)
+        Route::middleware('signed')->group(function () {
+            Route::get('verify/{id}/{hash}', [VerifyEmailController::class, 'verifyEmailAddress'])->name('verification.verify');
+            Route::get('change/verify/{id}/{hash}', [VerifyEmailChangeController::class, 'verifyChangeEmail'])->name('email.change.verify');
+        });
+
+        // Authenticated routes
+        Route::middleware(['auth:sanctum', 'throttle:6,1'])->group(function () {
+            Route::post('resend-verification', [VerifyEmailController::class, 'resendVerificationEmail'])->name('verification.send');
+            Route::post('change', [VerifyEmailChangeController::class, 'sendVerificationEmail'])->name('email.change');
+        });
+    });
+
+    // Profile Routes (Authenticated only)
+    Route::prefix('profile')->middleware('auth:sanctum')->group(function () {
+        Route::get('/', [ProfileController::class, 'show']);
+        Route::patch('update', [ProfileController::class, 'update']);
+        Route::patch('update-password', [ProfileController::class, 'updatePassword']);
+    });
+
+});
