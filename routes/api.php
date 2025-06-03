@@ -6,12 +6,14 @@ use Illuminate\Support\Facades\Route;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
 // Health Check Route
+
 Route::get('/', function () {
     return response()->json([
-        'status' => 200,
-        'message' => 'Welcome to the ' . config('app.name') . ' API, it is working!',
-        'version' => config('app.version'),
-        'clientName' => strtolower(str_replace(' ', '', config('app.name'))),
+        'status'        => 200,
+        'message'       => 'Welcome to the ' . config('app.name') . ' API, it is working!',
+        'version'       => config('app.version'),
+        'clientName'    => strtolower(str_replace(' ', '', config('app.name'))),
+        'documentation' => config('app.url') . '/docs',
     ]);
 });
 
@@ -19,6 +21,9 @@ Route::get('/', function () {
 Route::prefix('v1')->group(function () {
 
     // System Routes
+    /**
+     * @hideFromAPIDocumentation
+     */
     if (config('app.log_viewer')) {
         Route::get('logs', [LogViewerController::class, 'index']);
     }

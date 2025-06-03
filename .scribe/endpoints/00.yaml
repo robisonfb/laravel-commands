@@ -1,0 +1,668 @@
+name: Authentication
+description: |-
+
+  APIs for user authentication
+endpoints:
+  -
+    httpMethods:
+      - POST
+    uri: api/v1/auth/login
+    metadata:
+      groupName: Authentication
+      groupDescription: |-
+
+        APIs for user authentication
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Login user'
+      description: 'Authenticate a user and return an access token.'
+      authenticated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      email:
+        name: email
+        description: 'User email address (max 255 characters, must be valid email format). Must be a valid email format as per RFC standards.'
+        required: true
+        example: user@example.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      password:
+        name: password
+        description: 'User password (8-50 characters, must contain: uppercase letter, lowercase letter, number, and symbol). Password must include mixed case letters, numbers, and special symbols for security.'
+        required: true
+        example: Password@123
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      email: user@example.com
+      password: Password@123
+    fileParameters: []
+    responses:
+      -
+        status: 200
+        content: |-
+          {
+            "status": "success",
+            "message": "User logged in successfully",
+            "data": {
+              "id": 1,
+              "first_name": "John",
+              "last_name": "Doe",
+              "email": "user@example.com",
+              "access_token": "1|token_string"
+            },
+            "meta": {
+              "version": "1.0.0"
+            }
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 401
+        content: |-
+          {
+            "status": "error",
+            "message": "Invalid credentials",
+            "data": [],
+            "meta": {
+              "version": "1.0.0"
+            }
+          }
+        headers: []
+        description: ''
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: api/v1/auth/register
+    metadata:
+      groupName: Authentication
+      groupDescription: |-
+
+        APIs for user authentication
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Register user'
+      description: |-
+        Create a new user account and initiate the email verification process.
+
+        **Registration Process Flow:**
+        1. User provides registration data (first name, last name, email, password)
+        2. Data is validated according to established rules
+        3. User account is created in the system
+        4. A verification email is automatically sent to the provided address
+        5. User receives an access token for immediate API use
+        6. User must verify their email by clicking the received link
+
+        **Email Verification Process:**
+        After registration, a verification email is automatically sent. When the user
+        clicks the verification link, they will be redirected to the frontend with different
+        status depending on the result:
+
+        - **Success**: `{FRONTEND_URL}/verify-email?status=success&message=Email+verified+successfully`
+        - **Error - Invalid ID**: `{FRONTEND_URL}/verify-email?status=error&message=Invalid+user+ID`
+        - **Error - User not found**: `{FRONTEND_URL}/verify-email?status=error&message=User+not+found`
+        - **Error - Invalid/expired link**: `{FRONTEND_URL}/verify-email?status=error&message=Invalid+or+expired+verification+link`
+
+        **Important:** The backend manages the entire email verification process,
+        including redirects. The frontend must be prepared to receive the
+        `status` and `message` parameters in the URL and display appropriate messages.
+      authenticated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      first_name:
+        name: first_name
+        description: 'User first name (3-50 characters, only letters and spaces allowed).'
+        required: true
+        example: John
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      last_name:
+        name: last_name
+        description: 'User last name (3-50 characters, only letters and spaces allowed).'
+        required: true
+        example: Doe
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      email:
+        name: email
+        description: 'User email address (max 255 characters, must be valid email format and unique). Must be a valid email format as per RFC standards.'
+        required: true
+        example: user@example.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      password:
+        name: password
+        description: 'User password (8-50 characters, must contain: uppercase letter, lowercase letter, number, and symbol). Password must include mixed case letters, numbers, and special symbols for security.'
+        required: true
+        example: Password@123
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      password_confirmation:
+        name: password_confirmation
+        description: 'Password confirmation (must match the password field exactly).'
+        required: true
+        example: Password@123
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      first_name: John
+      last_name: Doe
+      email: user@example.com
+      password: Password@123
+      password_confirmation: Password@123
+    fileParameters: []
+    responses:
+      -
+        status: 200
+        content: |-
+          {
+            "status": "success",
+            "message": "A verification email has been sent to your email address.",
+            "data": {
+              "id": 1,
+              "first_name": "John",
+              "last_name": "Doe",
+              "email": "user@example.com",
+              "access_token": "1|token_string"
+            },
+            "meta": {
+              "version": "1.0.0"
+            }
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 400
+        content: |-
+          {
+            "status": "error",
+            "message": "Invalid or missing data",
+            "data": {
+              "first_name": [
+                "The first name field is required."
+              ],
+              "last_name": [
+                "The last name field is required."
+              ],
+              "email": [
+                "The email field is required."
+              ],
+              "password": [
+                "The password field is required."
+              ]
+            },
+            "meta": {
+              "version": "1.0.0"
+            }
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 400
+        content: |-
+          {
+            "status": "error",
+            "message": "Invalid or missing data",
+            "data": {
+              "email": [
+                "The email has already been taken."
+              ]
+            },
+            "meta": {
+              "version": "1.0.0"
+            }
+          }
+        headers: []
+        description: ''
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: api/v1/auth/forgot-password
+    metadata:
+      groupName: Authentication
+      groupDescription: |-
+
+        APIs for user authentication
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Send reset link'
+      description: |-
+        Send a password reset link to the user's email address. This endpoint initiates the password reset process
+        by generating a secure token and sending it via email to the user. The token is valid for a limited time
+        and can be used with the ```api/v1/auth/reset-password``` endpoint to complete the password reset process.
+      authenticated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      email:
+        name: email
+        description: 'User email address (max 255 characters, must be valid email format and unique). Must be a valid email format as per RFC standards.'
+        required: true
+        example: user@example.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      email: user@example.com
+    fileParameters: []
+    responses:
+      -
+        status: 200
+        content: |-
+          {
+            "status": "success",
+            "message": "Password reset link sent successfully",
+            "data": [],
+            "meta": {
+              "version": "1.0.0"
+            }
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 404
+        content: |-
+          {
+                "status": "error",
+                "message": "User not found",
+                "data": [],
+                "meta": {
+                    "version": "1.0.0"
+                }
+            }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 422
+        content: |-
+          {
+               "status": "error",
+               "message": "Invalid or missing data",
+               "data": {
+                   "email": [
+                       "The email field is required."
+                   ]
+               },
+               "meta": {
+                   "version": "1.0.0"
+               }
+            }
+        headers: []
+        description: ''
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: api/v1/auth/reset-password
+    metadata:
+      groupName: Authentication
+      groupDescription: |-
+
+        APIs for user authentication
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Reset password'
+      description: |-
+        Reset the user's password using the token received via email.
+
+        **Complete password reset flow:**
+        1. User requests reset through ``api/v1/auth/forgot-password`` route by providing only email
+        2. System sends an email containing a link with reset token and user email
+        3. User accesses the link and uses this route to set new password
+        4. This route requires the token (sent in email), email and new password to complete the process
+      authenticated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      token:
+        name: token
+        description: "Password reset token received via email from ```api/v1/auth/forgot-password``` endpoint. This token is automatically included in the reset link sent to the user's email."
+        required: true
+        example: abc123token456def
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      email:
+        name: email
+        description: 'User email address (max 255 characters, must be valid email format and match the email used in ```api/v1/auth/forgot-password```). This email is automatically included in the reset link sent from forgotPassword endpoint. Must be a valid email format as per RFC standards.'
+        required: true
+        example: user@example.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      password:
+        name: password
+        description: 'New user password (8-255 characters, must contain: uppercase letter, lowercase letter, number, and symbol). Password must include mixed case letters, numbers, and special symbols for security.'
+        required: true
+        example: NewPassword@123
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      password_confirmation:
+        name: password_confirmation
+        description: 'Password confirmation (must match the password field exactly).'
+        required: true
+        example: NewPassword@123
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      token: abc123token456def
+      email: user@example.com
+      password: NewPassword@123
+      password_confirmation: NewPassword@123
+    fileParameters: []
+    responses:
+      -
+        status: 200
+        content: |-
+          {
+            "status": "success",
+            "message": "Password reset successfully",
+            "data": null,
+            "meta": {
+              "version": "1.0.0"
+            }
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 400
+        content: |-
+          {
+            "status": "error",
+            "message": "Invalid or missing data",
+            "data": {
+              "password": [
+                "The password field is required."
+              ]
+            },
+            "meta": {
+              "version": "1.0.0"
+            }
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 400
+        content: |-
+          {
+            "status": "error",
+            "message": "Invalid token",
+            "data": null,
+            "meta": {
+              "version": "1.0.0"
+            }
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 404
+        content: |-
+          {
+            "status": "error",
+            "message": "User not found",
+            "data": null,
+            "meta": {
+              "version": "1.0.0"
+            }
+          }
+        headers: []
+        description: ''
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: api/v1/auth/logout
+    metadata:
+      groupName: Authentication
+      groupDescription: |-
+
+        APIs for user authentication
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Logout user'
+      description: 'Logout authenticated user and revoke tokens'
+      authenticated: true
+      custom: []
+    headers:
+      Authorization: 'Bearer {YOUR_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        status: 200
+        content: |-
+          {
+            "status": "success",
+            "message": "User logged out successfully",
+            "data": [],
+            "meta": {
+              "version": "1.0.0"
+            }
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 401
+        content: |-
+          {
+              "status": "unauthorized",
+              "message": "Unauthorized access. Invalid or expired token.",
+              "data": [],
+              "meta": {
+                  "version": "1.0.0"
+              }
+          }
+        headers: []
+        description: ''
+        custom: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: api/v1/email/resend-verification
+    metadata:
+      groupName: Authentication
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Resend verification email'
+      description: |-
+        Resends the email verification link to the authenticated user who has not yet verified their email address.
+        This endpoint allows users to request a new verification email if they didn't receive the original one,
+        if it expired, or if they need it sent to their registered email address again.
+
+        **Process Flow:**
+        1. Validates that the user is authenticated
+        2. Checks if the email is already verified
+        3. If not verified, sends a new verification email with a signed URL
+        4. The verification email contains a link that redirects to the frontend with status parameters
+
+        **Important:** This endpoint is rate-limited to prevent abuse (6 requests per minute).
+      authenticated: true
+      custom: []
+    headers:
+      Authorization: 'Bearer {YOUR_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        status: 200
+        content: |-
+          {
+            "status": "success",
+            "message": "Verification link sent!",
+            "data": [],
+            "meta": {
+              "version": "1.0.0"
+            }
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 400
+        content: |-
+          {
+            "status": "error",
+            "message": "Email already verified",
+            "data": [],
+            "meta": {
+              "version": "1.0.0"
+            }
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 401
+        content: |-
+          {
+              "status": "error",
+              "message": "Unauthenticated. Please login to access this resource.",
+              "data": null,
+              "meta": {
+                  "version": "1.0.0"
+              }
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 429
+        content: |-
+          {
+              "status": "error",
+              "message": "Too many requests. Please try again later.",
+              "data": null,
+              "meta": {
+                  "version": "1.0.0"
+              }
+          }
+        headers: []
+        description: ''
+        custom: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+    custom: []

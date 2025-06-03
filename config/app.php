@@ -27,7 +27,7 @@ return [
     */
 
     'env'        => env('APP_ENV', 'production'),
-    'version'    => env('API_VERSION', '0.01'),
+    'version'    => env('API_VERSION', '1.0.0'),
     'log_viewer' => env('LOG_VIEWER', false),
 
     /*

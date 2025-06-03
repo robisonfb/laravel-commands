@@ -6,9 +6,8 @@ use App\Trait\HttpResponses;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Validation\Rules\Password;
 
-class RegisterUserRequest extends FormRequest
+class ForgotPasswordRequest extends FormRequest
 {
     use HttpResponses;
 
@@ -20,10 +19,7 @@ class RegisterUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => ['required', 'string', 'min:3', 'max:50', 'regex:/^[a-zA-Z\s]+$/'],
-            'last_name'  => ['required', 'string', 'min:3', 'max:50', 'regex:/^[a-zA-Z\s]+$/'],
-            'email'      => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password'   => ['required', 'max:50', Password::min(8)->mixedCase()->letters()->numbers()->symbols()],
+            'email' => ['required', 'string', 'email', 'max:255'],
         ];
     }
 
