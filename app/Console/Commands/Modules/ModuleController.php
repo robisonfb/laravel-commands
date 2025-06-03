@@ -4,6 +4,7 @@ namespace App\Console\Commands\Modules;
 
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\File;
 
 class ModuleController extends GeneratorCommand
 {
@@ -38,6 +39,9 @@ class ModuleController extends GeneratorCommand
      */
     public function handle()
     {
+        // Cria a pasta da model se não existir
+        $this->createModelDirectory();
+
         // Verifica se o arquivo já existe
         if ($this->alreadyExists($this->getNameInput())) {
             // Se a opção --force foi fornecida, sobrescreve o arquivo
@@ -62,6 +66,39 @@ class ModuleController extends GeneratorCommand
         }
 
         return $result;
+    }
+
+    /**
+     * Cria o diretório da model se não existir
+     *
+     * @return void
+     */
+    protected function createModelDirectory()
+    {
+        $modelName = $this->getModelName();
+        $directory = app_path('Http/Controllers/' . $modelName);
+
+        if (!File::exists($directory)) {
+            File::makeDirectory($directory, 0755, true);
+            $this->info('Diretório criado: ' . $directory);
+        }
+    }
+
+    /**
+     * Obtém o nome da model limpo
+     *
+     * @return string
+     */
+    protected function getModelName()
+    {
+        $modelName = $this->getNameInput();
+
+        // Remove 'Controller' do final se estiver presente
+        if (Str::endsWith($modelName, 'Controller')) {
+            $modelName = Str::replaceLast('Controller', '', $modelName);
+        }
+
+        return $modelName;
     }
 
     /**
@@ -91,7 +128,8 @@ class ModuleController extends GeneratorCommand
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\\Http\\Controllers';
+        $modelName = $this->getModelName();
+        return $rootNamespace . '\\Http\\Controllers\\' . $modelName;
     }
 
     /**
