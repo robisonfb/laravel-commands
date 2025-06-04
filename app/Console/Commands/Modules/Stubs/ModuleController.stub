@@ -2,22 +2,127 @@
 
 namespace DummyNamespace;
 
-use App\Http\Requests\{Store{modelName}Request, Update{modelName}Request};
-use App\Http\Resources\{{modelName}Collection, {modelName}Resource};
+use App\Http\Controllers\Controller;
+use App\Http\Requests\{modelName}\{Store{modelName}Request, Update{modelName}Request};
+use App\Http\Resources\{modelName}\{{modelName}Collection, {modelName}Resource};
 use App\Models\{modelName};
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\{JsonResponse, Request, Response};
-use Illuminate\Support\Facades\{Cache, DB, Log, Schema};
+use Illuminate\Support\Facades\{Log};
+
+/**
+ * @group {modelNamePluralLowerCase}
+ *
+ * APIs for managing {modelNamePluralLowerCase}.
+ */
 
 class DummyClass extends Controller
 {
     /**
-     * Exibe uma listagem de {modelNamePluralLowerCase}.
+     * List {modelNamePluralLowerCase}
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * Retrieve a paginated list of {modelNamePluralLowerCase} with optional filtering, sorting, and searching capabilities.
+     *
+     * **Pagination and Sorting:**
+     * - Default pagination: 15 items per page (max 100)
+     * - Default sorting: by created_at in descending order
+     * - Allowed sort columns: created_at, updated_at, id
+     *
+     * **Search Functionality:**
+     * - Search is performed on the 'title' field using LIKE operator
+     * - Search term is case-insensitive and supports partial matches
+     *
+     * @queryParam per_page integer optional Number of items per page (1-100). Default: 15. Example: 20
+     * @queryParam sort_by string optional Column to sort by (created_at, updated_at, id). Default: created_at. Example: updated_at
+     * @queryParam sort_order string optional Sort direction (asc, desc). Default: desc. Example: asc
+     * @queryParam search string optional Search term to filter results by title. Example: example search
+     *
+     * @response 200 {
+     *   "status": "success",
+     *   "message": "{modelName} retrieved successfully",
+     *   "data": {
+     *     "data": [
+     *       {
+     *         "id": 1,
+     *         "title": "Example Title",
+     *         "created_at": "2024-01-01T00:00:00.000000Z",
+     *         "updated_at": "2024-01-01T00:00:00.000000Z"
+     *       }
+     *     ],
+     *     "current_page": 1,
+     *     "first_page_url": "http://localhost/api/{modelNamePluralLowerCase}?page=1",
+     *     "from": 1,
+     *     "last_page": 1,
+     *     "last_page_url": "http://localhost/api/{modelNamePluralLowerCase}?page=1",
+     *     "links": [
+     *       {
+     *         "url": null,
+     *         "label": "&laquo; Previous",
+     *         "active": false
+     *       },
+     *       {
+     *         "url": "http://localhost/api/{modelNamePluralLowerCase}?page=1",
+     *         "label": "1",
+     *         "active": true
+     *       },
+     *       {
+     *         "url": null,
+     *         "label": "Next &raquo;",
+     *         "active": false
+     *       }
+     *     ],
+     *     "next_page_url": null,
+     *     "path": "http://localhost/api/{modelNamePluralLowerCase}",
+     *     "per_page": 15,
+     *     "prev_page_url": null,
+     *     "to": 1,
+     *     "total": 1
+     *   },
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
+     * }
+     *
+     * @response 200 {
+     *   "status": "success",
+     *   "message": "No {modelNamePluralLowerCase} results found",
+     *   "data": [],
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
+     * }
+     *
+     * @response 422 {
+     *   "status": "error",
+     *   "message": "Invalid or missing data",
+     *   "data": {
+     *     "per_page": [
+     *       "The per page must be an integer.",
+     *       "The per page must be at least 1.",
+     *       "The per page must not be greater than 100."
+     *     ],
+     *     "sort_order": [
+     *       "The selected sort order is invalid."
+     *     ]
+     *   },
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
+     * }
+     *
+     * @response 500 {
+     *   "status": "error",
+     *   "message": "Failed to fetch {modelNamePluralLowerCase}",
+     *   "data": [
+     *     "Database connection error"
+     *   ],
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
+     * }
      */
+
     public function index(Request $request): JsonResponse
     {
         try {
@@ -25,7 +130,8 @@ class DummyClass extends Controller
             $validated = $request->validate([
                 'per_page' => 'nullable|integer|min:1|max:100',
                 'sort_by' => 'nullable|string',
-                'sort_order' => 'nullable|string|in:asc,desc'
+                'sort_order' => 'nullable|string|in:asc,desc',
+                'search' => 'nullable|string'
             ]);
 
             // Configurar parâmetros de paginação
@@ -40,32 +146,124 @@ class DummyClass extends Controller
 
             $sortOrder = $validated['sort_order'] ?? 'desc';
 
-            // Chave de cache única baseada nos parâmetros
-            $page = $request->query('page', 1);
+            $query = {modelName}::query();
+
+            // Aplicar filtros, se disponíveis
+            if ($request->has('search')) {
+                $searchTerm = $request->input('search');
+                $query->where(function ($q) use ($searchTerm) {
+                    $q->where('title', 'like', '%'. $searchTerm. '%');
+                });
+            }
+
+            // Buscar {modelNamePluralLowerCase} com paginação e ordenação
+            ${modelNamePluralLowerCase} = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
 
             // Se não houver resultados
             if (${modelNamePluralLowerCase}->isEmpty()) {
                 return $this->success([], __('No {modelNamePluralLowerCase} results found'), 200);
             }
 
-            // Retornar coleção de recursos
-            return (new {modelName}Collection(${modelNamePluralLowerCase}))
-                ->response()
-                ->setStatusCode(Response::HTTP_OK);
+            // Retornar usando o padrão success() com {modelName}Collection
+            return $this->success(
+                new {modelName}Collection(${modelNamePluralLowerCase}),
+                __('{modelName} retrieved successfully'),
+                200
+            );
 
         } catch (\Exception $e) {
             Log::error('Erro ao buscar {modelNamePluralLowerCase}: ' . $e->getMessage());
+
+            Log::error('Erro ao buscar {modelNameLowerCase} no {modelName}Controller::index', [
+                'controller' => '{modelName}Controller',
+                'method' => 'index',
+                'user_id' => auth()->id() ?? 'guest',
+                'error_message' => $e->getMessage(),
+                'error_line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
 
             return $this->error([$e->getMessage()], __('Failed to fetch {modelNamePluralLowerCase}'), 500);
         }
     }
 
     /**
-     * Armazena um novo {modelNameLowerCase} no banco de dados.
+     * Create {modelNameLowerCase}
      *
-     * @param Store{modelName}Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * Create a new {modelNameLowerCase} record in the database with optional file uploads.
+     *
+     * **File Upload Process:**
+     * - Files are uploaded to the '{modelNamePluralLowerCase}' directory in public storage
+     * - Multiple files can be uploaded simultaneously
+     * - File paths are stored as JSON in the database
+     * - Supported file types depend on server configuration
+     *
+     * **Transaction Management:**
+     * - All operations are wrapped in a database transaction
+     * - If any step fails, all changes are rolled back
+     *
+     * @bodyParam title string required The title of the {modelNameLowerCase} (3-255 characters). Example: Example Title
+     * @bodyParam description string optional Description of the {modelNameLowerCase} (max 1000 characters). Example: This is an example description
+     * @bodyParam files file[] optional Array of files to upload. Maximum file size and allowed types depend on server configuration.
+     *
+     * @response 201 {
+     *   "status": "success",
+     *   "message": "{modelName} created successfully",
+     *   "data": {
+     *     "id": 1,
+     *     "title": "Example Title",
+     *     "description": "This is an example description",
+     *     "files": [
+     *       "/storage/{modelNamePluralLowerCase}/file1.jpg",
+     *       "/storage/{modelNamePluralLowerCase}/file2.pdf"
+     *     ],
+     *     "created_at": "2024-01-01T00:00:00.000000Z",
+     *     "updated_at": "2024-01-01T00:00:00.000000Z"
+     *   },
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
+     * }
+     *
+     * @response 422 {
+     *   "status": "error",
+     *   "message": "Invalid or missing data",
+     *   "data": {
+     *     "title": [
+     *       "The title field is required."
+     *     ],
+     *     "description": [
+     *       "The description must not be greater than 1000 characters."
+     *     ]
+     *   },
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
+     * }
+     *
+     * @response 422 {
+     *   "status": "error",
+     *   "message": "Failed to process uploaded files",
+     *   "data": [
+     *     "The uploaded file exceeds the maximum allowed size"
+     *   ],
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
+     * }
+     *
+     * @response 500 {
+     *   "status": "error",
+     *   "message": "Failed to create {modelNameLowerCase}",
+     *   "data": [
+     *     "Database connection error"
+     *   ],
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
+     * }
      */
+
     public function store(Store{modelName}Request $request): JsonResponse
     {
         DB::beginTransaction();
@@ -80,11 +278,18 @@ class DummyClass extends Controller
                     $validatedData['files'] = json_encode($imagePaths);
                 } catch (\Exception $e) {
                     DB::rollBack();
-                    Log::error('Erro ao processar arquivos: ' . $e->getMessage());
-                    return response()->json([
-                        'message' => __('Failed to process uploaded files'),
-                        'error' => $e->getMessage()
-                    ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                    Log::error('Erro ao processar arquivos no {modelName}Controller::store', [
+                        'controller' => '{modelName}Controller',
+                        'method' => 'store',
+                        'user_id' => auth()->id() ?? 'guest',
+                        'request_data' => $request->except(['files', 'password']),
+                        'files_count' => $request->hasFile('files') ? count($request->file('files')) : 0,
+                        'error_message' => $e->getMessage(),
+                        'error_file' => $e->getFile(),
+                        'error_line' => $e->getLine(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    return $this->error([$e->getMessage()], __('Failed to process uploaded files'), 422);
                 }
             }
 
@@ -96,87 +301,172 @@ class DummyClass extends Controller
 
             DB::commit();
 
-            // Limpar caches
-            $this->clearRelatedCaches();
-
             // Resposta
-            return (new {modelName}Resource(${modelNameLowerCase}))
-                ->response()
-                ->setStatusCode(Response::HTTP_CREATED);
+            return $this->success(
+                new {modelName}Resource(${modelNameLowerCase}),
+                __('{modelName} created successfully'),
+                201
+            );
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Erro ao criar {modelNameLowerCase}: ' . $e->getMessage());
+            Log::error('Erro ao criar {modelNameLowerCase} no {modelName}Controller::store', [
+                'controller' => '{modelName}Controller',
+                'method' => 'store',
+                'user_id' => auth()->id() ?? 'guest',
+                'model_id' => ${modelNameLowerCase}->id ?? 'unknown',
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
 
-            return response()->json([
-                'message' => __('Failed to create {modelNameLowerCase}'),
-                'error' => $e->getMessage()
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->error([$e->getMessage()], __('Failed to create {modelNameLowerCase}'), 500);
         }
     }
 
     /**
-     * Exibe o {modelNameLowerCase} especificado.
+     * Show {modelNameLowerCase}
      *
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * Retrieve a specific {modelNameLowerCase} by its ID using Route Model Binding.
+     *
+     * **Route Model Binding:**
+     * - Automatically resolves the model instance from the route parameter
+     * - Returns 404 automatically if the model is not found
+     * - No manual validation needed for ID format
+     *
+     * @urlParam {modelNameLowerCase} integer required The {modelNameLowerCase} instance to retrieve. Example: 1
+     *
+     * @response 200 {
+     *   "status": "success",
+     *   "message": "{modelName} retrieved successfully",
+     *   "data": {
+     *     "id": 1,
+     *     "title": "Example Title",
+     *     "description": "This is an example description",
+     *     "files": [
+     *       "/storage/{modelNamePluralLowerCase}/file1.jpg",
+     *       "/storage/{modelNamePluralLowerCase}/file2.pdf"
+     *     ],
+     *     "created_at": "2024-01-01T00:00:00.000000Z",
+     *     "updated_at": "2024-01-01T00:00:00.000000Z"
+     *   },
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
+     * }
+     *
+     * @response 404 {
+     *   "status": "error",
+     *   "message": "No query results for model [{modelName}]",
+     *   "data": [],
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
+     * }
+     *
+     * @response 500 {
+     *   "status": "error",
+     *   "message": "Failed to fetch {modelNameLowerCase}",
+     *   "data": [
+     *     "Database connection error"
+     *   ],
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
+     * }
      */
-    public function show($id): JsonResponse
+    public function show({modelName} ${modelNameLowerCase}): JsonResponse
     {
-        try {
-            // Validar ID
-            if (!is_numeric($id) || $id <= 0) {
-                return response()->json([
-                    'message' => __('Invalid ID format')
-                ], Response::HTTP_BAD_REQUEST);
-            }
+         try {
 
-            // Buscar do cache ou do banco
-            ${modelNameLowerCase} = Cache::remember('{modelNameLowerCase}_' . $id, 3600, function () use ($id) {
-                // Aqui podemos incluir relacionamentos com 'with' se necessário
-                // return {modelName}::with(['relationship1', 'relationship2'])->findOrFail($id);
-                return {modelName}::findOrFail($id);
-            });
+            return $this->success(
+                new {modelName}Resource(${modelNameLowerCase}),
+                __('{modelName} retrieved successfully'),
+                200
+            );
 
-            // Retornar recurso
-            return (new {modelName}Resource(${modelNameLowerCase}))
-                ->response()
-                ->setStatusCode(Response::HTTP_OK);
-
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => __('{modelName} not found')
-            ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
-            Log::error('Erro ao buscar {modelNameLowerCase}: ' . $e->getMessage());
-            return response()->json([
-                'message' => __('Failed to fetch {modelNameLowerCase}'),
-                'error' => $e->getMessage()
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            Log::error('Erro ao retornar {modelNameLowerCase} no {modelName}Controller::show', [
+                'controller' => '{modelName}Controller',
+                'method' => 'show',
+                'user_id' => auth()->id() ?? 'guest',
+                'model_id' => ${modelNameLowerCase}->id ?? 'unknown',
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return $this->error([$e->getMessage()], __('Failed to fetch {modelNameLowerCase}'), 500);
         }
     }
 
     /**
-     * Atualiza o {modelNameLowerCase} especificado no banco de dados.
+     * Update {modelNameLowerCase}
      *
-     * @param Update{modelName}Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * Update a specific {modelNameLowerCase} with new data and file management.
+     *
+     * **File Management:**
+     * - Upload new files via 'files' field
+     * - Remove specific files via 'remove_files' array
+     * - Existing files are preserved unless explicitly removed
+     *
+     * **Route Model Binding:**
+     * - Automatically resolves the model instance
+     * - Returns 404 if model not found
+     *
+     * @urlParam {modelNameLowerCase} integer required The {modelNameLowerCase} instance to update. Example: 1
+     *
+     * @bodyParam title string optional The title of the {modelNameLowerCase}. Example: Updated Title
+     * @bodyParam description string optional The description of the {modelNameLowerCase}. Example: Updated description
+     * @bodyParam files file[] optional New files to upload. Max 10 files, 10MB each.
+     * @bodyParam remove_files string[] optional Array of file paths to remove. Example: ["/storage/{modelNamePluralLowerCase}/old-file.jpg"]
+     *
+     * @response 200 {
+     *   "status": "success",
+     *   "message": "{modelName} updated successfully",
+     *   "data": {
+     *     "id": 1,
+     *     "title": "Updated Title",
+     *     "description": "Updated description",
+     *     "files": [
+     *       "/storage/{modelNamePluralLowerCase}/new-file.jpg"
+     *     ],
+     *     "updated_at": "2024-01-01T12:00:00.000000Z"
+     *   },
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
+     * }
+     *
+     * @response 422 {
+     *   "status": "error",
+     *   "message": "Validation failed",
+     *   "data": {
+     *     "title": ["The title field is required."]
+     *   },
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
+     * }
+     *
+     * @response 500 {
+     *   "status": "error",
+     *   "message": "Failed to update {modelNameLowerCase}",
+     *   "data": [
+     *     "Database error occurred"
+     *   ],
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
+     * }
      */
-    public function update(Update{modelName}Request $request, $id): JsonResponse
+    public function update(Update{modelName}Request $request, {modelName} ${modelNameLowerCase}): JsonResponse
     {
         DB::beginTransaction();
 
         try {
-            // Validar ID
-            if (!is_numeric($id) || $id <= 0) {
-                return response()->json([
-                    'message' => __('Invalid ID format')
-                ], Response::HTTP_BAD_REQUEST);
-            }
-
-            // Buscar registro
-            ${modelNameLowerCase} = {modelName}::findOrFail($id);
             $validatedData = $request->validated();
 
             // Processar arquivos novos
@@ -193,11 +483,19 @@ class DummyClass extends Controller
                     $validatedData['files'] = json_encode($allFiles);
                 } catch (\Exception $e) {
                     DB::rollBack();
-                    Log::error('Erro ao processar arquivos: ' . $e->getMessage());
-                    return response()->json([
-                        'message' => __('Failed to process uploaded files'),
-                        'error' => $e->getMessage()
-                    ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                    Log::error('Erro ao processar arquivos no {modelName}Controller::update', [
+                        'controller' => '{modelName}Controller',
+                        'method' => 'update',
+                        'user_id' => auth()->id() ?? 'guest',
+                        'model_id' => ${modelNameLowerCase}->id,
+                        'files_count' => $request->file('files') ? count($request->file('files')) : 0,
+                        'error_message' => $e->getMessage(),
+                        'error_file' => $e->getFile(),
+                        'error_line' => $e->getLine(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+
+                    return $this->error([$e->getMessage()], __('Failed to process uploaded files'), 422);
                 }
             }
 
@@ -227,11 +525,19 @@ class DummyClass extends Controller
                     }
                 } catch (\Exception $e) {
                     DB::rollBack();
-                    Log::error('Erro ao remover arquivos: ' . $e->getMessage());
-                    return response()->json([
-                        'message' => __('Failed to remove files'),
-                        'error' => $e->getMessage()
-                    ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                    Log::error('Erro ao remover arquivos no {modelName}Controller::update', [
+                        'controller' => '{modelName}Controller',
+                        'method' => 'update',
+                        'user_id' => auth()->id() ?? 'guest',
+                        'model_id' => ${modelNameLowerCase}->id,
+                        'files_to_remove' => $request->input('remove_files', []),
+                        'error_message' => $e->getMessage(),
+                        'error_file' => $e->getFile(),
+                        'error_line' => $e->getLine(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+
+                    return $this->error([$e->getMessage()], __('Failed to remove files'), 422);
                 }
             }
 
@@ -243,52 +549,63 @@ class DummyClass extends Controller
 
             DB::commit();
 
-            // Limpar caches
-            Cache::forget('{modelNameLowerCase}_' . $id);
-            $this->clearRelatedCaches();
+            return $this->success(
+                new {modelName}Resource(${modelNameLowerCase}),
+                __('{modelName} updated successfully'),
+                200
+            );
 
-            // Resposta
-            return (new {modelName}Resource(${modelNameLowerCase}))
-                ->response()
-                ->setStatusCode(Response::HTTP_OK);
-
-        } catch (ModelNotFoundException $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => __('{modelName} not found')
-            ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Erro ao atualizar {modelNameLowerCase}: ' . $e->getMessage());
+            Log::error('Erro ao atualizar {modelNameLowerCase} no {modelName}Controller::update', [
+                'controller' => '{modelName}Controller',
+                'method' => 'update',
+                'user_id' => auth()->id() ?? 'guest',
+                'model_id' => ${modelNameLowerCase}->id ?? 'unknown',
+                'request_data' => $request->except(['files', 'password', 'password_confirmation']),
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
 
-            return response()->json([
-                'message' => __('Failed to update {modelNameLowerCase}'),
-                'error' => $e->getMessage()
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->error([$e->getMessage()], __('Failed to update {modelNameLowerCase}'), 500);
         }
     }
 
     /**
      * Remove o {modelNameLowerCase} especificado do banco de dados.
      *
-     * @param int $id
+     * Este endpoint permite excluir um registro específico do banco de dados.
+     * Utiliza transações para garantir a integridade dos dados e remove
+     * arquivos físicos associados quando existirem.
+     *
+     * @group {modelName} Management
+     *
+     * @urlParam id integer required O ID do {modelNameLowerCase} a ser excluído. Example: 1
+     *
+     * @response 204 {
+     *   "message": "Registro excluído com sucesso"
+     * }
+     *
+     * @response 404 {
+     *   "message": "{modelName} not found",
+     *   "error": "No query results for model [{modelName}] 999"
+     * }
+     *
+     * @response 500 {
+     *   "message": "Failed to delete {modelNameLowerCase}",
+     *   "error": "Database connection error"
+     * }
+     *
+     * @param {modelName} ${modelNameLowerCase}
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id): JsonResponse
+    public function destroy({modelName} ${modelNameLowerCase}): JsonResponse
     {
         DB::beginTransaction();
 
         try {
-            // Validar ID
-            if (!is_numeric($id) || $id <= 0) {
-                return response()->json([
-                    'message' => __('Invalid ID format')
-                ], Response::HTTP_BAD_REQUEST);
-            }
-
-            // Buscar registro
-            ${modelNameLowerCase} = {modelName}::findOrFail($id);
-
             // Excluir arquivos físicos se existirem
             if (!empty(${modelNameLowerCase}->files)) {
                 try {
@@ -297,7 +614,19 @@ class DummyClass extends Controller
                         delete_files($files);
                     }
                 } catch (\Exception $e) {
-                    Log::warning('Erro ao excluir arquivos físicos: ' . $e->getMessage());
+                    Log::warning('Erro ao excluir arquivos físicos', [
+                        'controller' => '{modelName}Controller',
+                        'method' => 'destroy',
+                        'user_id' => auth()->id(),
+                        '{modelNameLowerCase}_id' => ${modelNameLowerCase}->id,
+                        'files_to_delete' => $files,
+                        'error' => [
+                            'message' => $e->getMessage(),
+                            'file' => $e->getFile(),
+                            'line' => $e->getLine(),
+                            'trace' => $e->getTraceAsString()
+                        ]
+                    ]);
                     // Continua a execução mesmo com erro nos arquivos
                 }
             }
@@ -307,85 +636,25 @@ class DummyClass extends Controller
 
             DB::commit();
 
-            // Limpar caches
-            Cache::forget('{modelNameLowerCase}_' . $id);
-            $this->clearRelatedCaches();
+            return $this->success(null, __('Record deleted successfully'), 204);
 
-            // Retornar resposta sem conteúdo
-            return response()->json(null, Response::HTTP_NO_CONTENT);
-
-        } catch (ModelNotFoundException $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => __('{modelName} not found')
-            ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Erro ao excluir {modelNameLowerCase}: ' . $e->getMessage());
 
-            return response()->json([
-                'message' => __('Failed to delete {modelNameLowerCase}'),
-                'error' => $e->getMessage()
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
+            Log::error('Erro ao excluir {modelNameLowerCase}', [
+                'controller' => '{modelName}Controller',
+                'method' => 'destroy',
+                'user_id' => auth()->id(),
+                '{modelNameLowerCase}_id' => ${modelNameLowerCase}->id,
+                'error' => [
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString()
+                ]
+            ]);
 
-    /**
-     * Limpa os caches relacionados a listagens de {modelNamePluralLowerCase}.
-     * Verifica automaticamente o driver de cache e usa o método mais apropriado.
-     *
-     * @return void
-     */
-    private function clearRelatedCaches(): void
-    {
-        $driver = config('cache.default');
-        $supportsTags = in_array($driver, ['redis', 'memcached']);
-
-        if ($supportsTags) {
-            // Para drivers que suportam tags (Redis, Memcached)
-            try {
-                Cache::tags(['{modelNamePluralLowerCase}'])->flush();
-                return;
-            } catch (\Exception $e) {
-                // Fallback caso tags não estejam configuradas corretamente
-                Log::warning("Tentativa de usar tags de cache falhou: {$e->getMessage()}");
-            }
-        }
-
-        // Para drivers file, database ou outros sem suporte a tags
-        // ou fallback se o suporte a tags falhar
-
-        // Se estiver usando file driver, força limpeza de caches específicos
-        if ($driver === 'file') {
-            // Esquema simplificado - esquece caches mais comuns
-            for ($page = 1; $page <= 10; $page++) {
-                for ($perPage = 10; $perPage <= 100; $perPage += 10) {
-                    Cache::forget("{modelNamePluralLowerCase}_page{$page}_{$perPage}_created_at_desc");
-                    Cache::forget("{modelNamePluralLowerCase}_page{$page}_{$perPage}_updated_at_desc");
-                    Cache::forget("{modelNamePluralLowerCase}_page{$page}_{$perPage}_created_at_asc");
-                    Cache::forget("{modelNamePluralLowerCase}_page{$page}_{$perPage}_updated_at_asc");
-                }
-            }
-        } else {
-            // Para outros drivers que não sejam file ou que suportem tags
-            // Pode ser implementado conforme a necessidade específica do driver
-            // Exemplo para o driver database:
-            if ($driver === 'database') {
-                // Usa query direta para limpar o cache no banco
-                DB::table('cache')
-                    ->where('key', 'like', '%{modelNamePluralLowerCase}%')
-                    ->delete();
-            }
-        }
-
-        // Limpa também caches específicos de itens individuais que podem estar relacionados
-        try {
-            $ids = {modelName}::pluck('id')->toArray();
-            foreach ($ids as $id) {
-                Cache::forget('{modelNameLowerCase}_' . $id);
-            }
-        } catch (\Exception $e) {
-            Log::warning("Erro ao limpar caches individuais: {$e->getMessage()}");
+            return $this->error(__('Failed to delete {modelNameLowerCase}'), 500, $e->getMessage());
         }
     }
 }
