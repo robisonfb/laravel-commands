@@ -59,18 +59,21 @@ class DummyClass extends Controller
      *         "updated_at": "04/06/2025 15:59"
      *       }
      *     ],
-     *     "current_page": 1,
-     *     "first_page_url": "http://localhost/api/{modelNamePluralLowerCase}?page=1",
-     *     "from": 1,
-     *     "last_page": 1,
-     *     "last_page_url": "http://localhost/api/{modelNamePluralLowerCase}?page=1",
-     *     "links": [...],
-     *     "next_page_url": null,
-     *     "path": "http://localhost/api/{modelNamePluralLowerCase}",
-     *     "per_page": 15,
-     *     "prev_page_url": null,
-     *     "to": 1,
-     *     "total": 1
+     *     "pagination": {
+     *       "current_page": 1,
+     *       "last_page": 1,
+     *       "per_page": 15,
+     *       "total": 1,
+     *       "from": 1,
+     *       "to": 1,
+     *       "has_more_pages": false
+     *     },
+     *     "links": {
+     *       "first": "http://localhost/api/{modelNamePluralLowerCase}?page=1",
+     *       "last": "http://localhost/api/{modelNamePluralLowerCase}?page=1",
+     *       "prev": null,
+     *       "next": null
+     *     }
      *   },
      *   "meta": {
      *     "version": "1.0.0"
