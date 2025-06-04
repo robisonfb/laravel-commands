@@ -97,6 +97,8 @@ class DummyClass extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', {modelName}::class);
+
         try {
             $validated = $this->validateIndexRequest($request);
 
@@ -166,6 +168,9 @@ class DummyClass extends Controller
      */
     public function store(Store{modelName}Request $request): JsonResponse
     {
+        // A autorização já é feita no FormRequest, mas pode adicionar aqui também se preferir
+        // $this->authorize('create', {modelName}::class);
+
         return DB::transaction(function () use ($request) {
             try {
                 ${modelNameLowerCase} = {modelName}::create($request->validated());
@@ -227,6 +232,8 @@ class DummyClass extends Controller
      */
     public function show({modelName} ${modelNameLowerCase}): JsonResponse
     {
+        $this->authorize('view', ${modelNameLowerCase});
+
         try {
             return $this->success(
                 new {modelName}Resource(${modelNameLowerCase}),
@@ -287,6 +294,9 @@ class DummyClass extends Controller
      */
     public function update(Update{modelName}Request $request, {modelName} ${modelNameLowerCase}): JsonResponse
     {
+        // A autorização já é feita no FormRequest, mas pode adicionar aqui também se preferir
+        // $this->authorize('update', ${modelNameLowerCase});
+
         return DB::transaction(function () use ($request, ${modelNameLowerCase}) {
             try {
                 ${modelNameLowerCase}->update($request->validated());
@@ -339,6 +349,8 @@ class DummyClass extends Controller
      */
     public function destroy({modelName} ${modelNameLowerCase}): JsonResponse
     {
+        $this->authorize('delete', ${modelNameLowerCase});
+
         return DB::transaction(function () use (${modelNameLowerCase}) {
             try {
                 ${modelNameLowerCase}->delete();
