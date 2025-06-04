@@ -24,7 +24,7 @@ class {modelName}Collection extends ResourceCollection
     public function toArray($request): array
     {
         return [
-            'data' => $this->collection,
+            'items' => $this->collection,
             'pagination' => [
                 'current_page' => $this->currentPage(),
                 'last_page' => $this->lastPage(),
