@@ -15,7 +15,7 @@ trait HttpResponses
             'data'    => $data,
             'meta'    => [
                 'version' => config('app.version', '1.0.0'),
-                'timestamp' => now()->toISOString(),
+                'timestamp' => format_datetime(now()),
             ],
         ], $statusCode);
     }
@@ -31,7 +31,7 @@ trait HttpResponses
             'data'    => $data,
             'meta'    => [
                 'version' => config('app.version', '1.0.0'),
-                'timestamp' => now()->toISOString(),
+                'timestamp' => format_datetime(now()),
             ],
         ], $statusCode);
     }
