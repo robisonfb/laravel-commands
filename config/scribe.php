@@ -10,10 +10,10 @@ use Knuckles\Scribe\Extracting\Strategies;
 
 return [
     // The HTML <title> for the generated documentation.
-    'title' => config('app.name') . ' API Documentation',
+    'title' => 'Welcome to the API Documentation ' . config('app.name'),
 
     // A short description of your API. Will be included in the docs webpage, Postman collection and OpenAPI spec.
-    'description' => '',
+    'description' => 'This API provides a comprehensive set of endpoints for managing and accessing application resources. It follows RESTful principles and uses JSON for data exchange. The API is secured using Bearer token authentication and includes endpoints for user management, data operations, and system functionality.',
 
     // The base URL displayed in the docs.
     // If you're using `laravel` type, you can set this to a dynamic string, like '{{ config("app.tenant_url") }}' to get a dynamic base URL.

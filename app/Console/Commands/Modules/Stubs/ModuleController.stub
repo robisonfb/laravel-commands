@@ -47,7 +47,7 @@ class DummyClass extends Controller
      * @queryParam sort_order string optional Sort direction (asc, desc). Default: desc. Example: asc
      * @queryParam search string optional Search term to filter results by title. Example: Example Title
      *
-     * @response 200 {
+     * @response 200 scenario="Success" {
      *   "status": "success",
      *   "message": "{modelName} retrieved successfully",
      *   "data": {
@@ -78,6 +78,15 @@ class DummyClass extends Controller
      *   "meta": {
      *     "version": "1.0.0"
      *   }
+     * }
+     *
+     * @response 401 scenario="Unauthenticated" {
+     *     "status": "unauthorized",
+     *     "message": "Unauthorized access. Invalid or expired token.",
+     *     "data": [],
+     *     "meta": {
+     *         "version": "1.0.0"
+     *     }
      * }
      *
      * @response 422 {
@@ -138,7 +147,7 @@ class DummyClass extends Controller
      * @bodyParam title string required The title of the {modelNameLowerCase} (3-255 characters). Example: Example Title
      * @bodyParam description string optional Description of the {modelNameLowerCase} (max 1000 characters). Example: This is an example description
      *
-     * @response 201 {
+     * @response 200 scenario="Success" {
      *   "status": "success",
      *   "message": "{modelName} created successfully",
      *   "data": {
@@ -151,6 +160,15 @@ class DummyClass extends Controller
      *   "meta": {
      *     "version": "1.0.0"
      *   }
+     * }
+     *
+     * @response 401 scenario="Unauthenticated" {
+     *     "status": "unauthorized",
+     *     "message": "Unauthorized access. Invalid or expired token.",
+     *     "data": [],
+     *     "meta": {
+     *         "version": "1.0.0"
+     *     }
      * }
      *
      * @response 422 {
@@ -222,6 +240,15 @@ class DummyClass extends Controller
      *   }
      * }
      *
+     * @response 401 scenario="Unauthenticated" {
+     *     "status": "unauthorized",
+     *     "message": "Unauthorized access. Invalid or expired token.",
+     *     "data": [],
+     *     "meta": {
+     *         "version": "1.0.0"
+     *     }
+     * }
+     *
      * @response 404 {
      *   "status": "error",
      *   "message": "No query results for model [{modelName}]",
@@ -284,6 +311,15 @@ class DummyClass extends Controller
      *   }
      * }
      *
+     * @response 401 scenario="Unauthenticated" {
+     *     "status": "unauthorized",
+     *     "message": "Unauthorized access. Invalid or expired token.",
+     *     "data": [],
+     *     "meta": {
+     *         "version": "1.0.0"
+     *     }
+     * }
+     *
      * @response 422 {
      *   "status": "error",
      *   "message": "Validation failed",
@@ -341,6 +377,15 @@ class DummyClass extends Controller
      *   "meta": {
      *     "version": "1.0.0"
      *   }
+     * }
+     *
+     * @response 401 scenario="Unauthenticated" {
+     *     "status": "unauthorized",
+     *     "message": "Unauthorized access. Invalid or expired token.",
+     *     "data": [],
+     *     "meta": {
+     *         "version": "1.0.0"
+     *     }
      * }
      *
      * @response 404 {
