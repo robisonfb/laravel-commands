@@ -20,7 +20,7 @@ class Store{modelName}Request extends FormRequest
         $model = $this->route('{modelNameLowerCase}');
 
         // Verificar através do Gate/Policy
-        return Gate::allows('update', $model);
+        return Gate::allows('create', $model);
     }
 
     /**

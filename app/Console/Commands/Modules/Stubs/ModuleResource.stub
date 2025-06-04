@@ -19,62 +19,33 @@ class {modelName}Resource extends JsonResource
         return [
             'id' => $this->id,
 
-            // Campos básicos - substitua pelos campos do seu modelo
-            'name' => $this->name,
+            'title' => $this->name,
             'description' => $this->description,
             'status' => $this->status,
 
             // Exemplo de formatação de números
-            'price' => $this->when($this->price, function() {
-                return [
-                    'raw' => $this->price,
-                    'formatted' => 'R$ ' . number_format($this->price, 2, ',', '.'),
-                ];
-            }),
+            // 'price' => $this->when($this->price !== null, function () {
+            //     return [
+            //         'raw'       => $this->price,
+            //         'formatted' => formatCurrency($this->price ?? 0),
+            //     ];
+            // }),
 
             // Exemplo de tratamento de arquivos
-            'files' => $this->when($this->files, function() {
-                $files = json_decode($this->files, true) ?: [];
-                return collect($files)->map(function($file) {
-                    return [
-                        'path' => $file,
-                        'url' => Storage::url($file),
-                    ];
-                });
-            }),
-
-            // Exemplo de relacionamento simples
-            'category' => new CategoryResource($this->whenLoaded('category')),
-
-            // Exemplo de relacionamento de coleção
-            'tags' => TagResource::collection($this->whenLoaded('tags')),
+            // 'files' => $this->when($this->files, function() {
+            //     $files = json_decode($this->files, true) ?: [];
+            //     return collect($files)->map(function($file) {
+            //         return [
+            //             'path' => $file,
+            //             'url' => Storage::url($file),
+            //         ];
+            //     });
+            // }),
 
             // Timestamps formatados
-            'created_at' => $this->created_at?->toIso8601String(),
-            'updated_at' => $this->updated_at?->toIso8601String(),
+            'created_at'      => format_datetime($this->created_at),
+            'updated_at'      => format_datetime($this->updated_at),
 
-            // Links para o recurso
-            'links' => [
-                'self' => route('{modelNamePluralLowerCase}.show', $this->id),
-                'edit' => route('{modelNamePluralLowerCase}.edit', $this->id),
-                'delete' => route('{modelNamePluralLowerCase}.destroy', $this->id),
-            ],
-        ];
-    }
-
-    /**
-     * Obtém dados adicionais que devem ser retornados com o array de recursos.
-     *
-     * @param  Request  $request
-     * @return array
-     */
-    public function with($request): array
-    {
-        return [
-            'meta' => [
-                'version' => '1.0',
-                'api_status' => 'stable',
-            ],
         ];
     }
 }

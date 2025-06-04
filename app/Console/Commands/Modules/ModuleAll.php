@@ -78,7 +78,7 @@ class ModuleAll extends Command
             ['Update Request', 'module:update-request', false],
             ['Resource', 'module:resource', false],
             ['Collection', 'module:collection', false],
-            ['Test', 'module:test', true],
+            // ['Test', 'module:test', true],
         ];
 
         $this->line('🔨 Criando componentes do módulo ' . $model . '...');
