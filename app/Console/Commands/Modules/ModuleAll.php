@@ -326,7 +326,7 @@ class ModuleAll extends Command
 
             // Adicionar comentário explicativo e a rota com indentação adequada
             $indent = "    "; // 4 espaços para estar dentro do grupo v1
-            $routeBlock = "\n" . $indent . "// Rota para " . $model . "\n" . $indent . $routeLine . "\n";
+            $routeBlock = "\n" . $indent . "// " . $model . " Routes (Guest only) \n" . $indent . $routeLine . "\n";
 
             // Inserir a nova rota na posição encontrada
             $newContents = $beforeInsert . $routeBlock . $afterInsert;
