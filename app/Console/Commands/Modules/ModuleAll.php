@@ -9,7 +9,7 @@ use Illuminate\Support\{Str};
 class ModuleAll extends Command
 {
     protected $signature = 'module:all
-                            {--m|model= : O nome do modelo
+                            {--m|model= : O nome do modelo}
                             {--f|force : Sobrescrever arquivos existentes}
                             {--continue : Continuar mesmo se ocorrerem erros não críticos}
                             ';
@@ -204,7 +204,7 @@ class ModuleAll extends Command
             ['Política', $model . "::class => " . $model . "Policy::class,\n● Adicione no array \$policies do AuthServiceProvider\n-------------------------------------------"],
             ['Migração', "php artisan migrate\n● Execute para criar a tabela no banco de dados\n-------------------------------------------"],
             ['Seeder', "php artisan db:seed --class=" . $model . "Seeder\n● Execute para popular a tabela com dados iniciais\n-------------------------------------------"],
-            ['Coleção Postman', "Importe o arquivo postman/{$model}Collection.json no Postman\n● A coleção já foi gerada com todos os endpoints do recurso {$model}\n-------------------------------------------"],
+            //['Coleção Postman', "Importe o arquivo postman/{$model}Collection.json no Postman\n● A coleção já foi gerada com todos os endpoints do recurso {$model}\n-------------------------------------------"],
             ['Testes', "php artisan test\n● Execute para rodar os testes do módulo\n-------------------------------------------"],
             ['Limpeza', "php artisan module:clean\n● Limpa arquivos temporários e caches do módulo\n-------------------------------------------"],
         ];
@@ -234,7 +234,7 @@ class ModuleAll extends Command
         $contents = File::get($apiRoutesPath);
 
         // Preparar o namespace do controller
-        $controllerNamespace = "App\\Http\\Controllers\\{$model}Controller";
+        $controllerNamespace = "App\\Http\\Controllers\\{$model}\\{$model}Controller";
         $controllerImport    = "use {$controllerNamespace};";
 
         // Verificar se a importação já existe
@@ -277,24 +277,42 @@ class ModuleAll extends Command
             }
         }
 
-        // Encontrar o melhor local para inserir a rota
+        // Encontrar o melhor local para inserir a rota dentro do grupo Route::prefix('v1')
         $insertPos = strlen($contents);
 
-        // Procurar por padrões comuns onde as rotas devem ser inseridas
-        // 1. Antes do final de um grupo de middleware
-        if (preg_match_all('/Route::middleware\([^}]+\}\);/s', $contents, $middlewareMatches, PREG_OFFSET_CAPTURE)) {
-            $lastMiddleware = end($middlewareMatches[0]);
-            $insertPos = $lastMiddleware[1] + strlen($lastMiddleware[0]);
+        // Procurar pelo grupo Route::prefix('v1') e encontrar a última posição antes do fechamento
+        if (preg_match('/Route::prefix\([\'"]v1[\'"]\)->group\(function \(\) \{([\s\S]*?)\}\);/s', $contents, $v1GroupMatch, PREG_OFFSET_CAPTURE)) {
+            $groupContent = $v1GroupMatch[1][0];
+            $groupStartPos = $v1GroupMatch[1][1];
+
+            // Encontrar a última chave de fechamento antes do final do grupo
+            $lastClosingBrace = strrpos($groupContent, '}');
+
+            if ($lastClosingBrace !== false) {
+                // Inserir antes da última chave de fechamento do grupo interno
+                $insertPos = $groupStartPos + $lastClosingBrace;
+            } else {
+                // Se não encontrou chave de fechamento, inserir no final do conteúdo do grupo
+                $insertPos = $groupStartPos + strlen($groupContent);
+            }
         }
-        // 2. Após a última rota existente
-        elseif (preg_match_all('/Route::[^;]+;/', $contents, $routeMatches, PREG_OFFSET_CAPTURE)) {
-            $lastRoute = end($routeMatches[0]);
-            $insertPos = $lastRoute[1] + strlen($lastRoute[0]);
-        }
-        // 3. Após o último use statement se não houver rotas
-        elseif (preg_match_all('/^use .+;$/m', $contents, $useMatches, PREG_OFFSET_CAPTURE)) {
-            $lastUse = end($useMatches[0]);
-            $insertPos = $lastUse[1] + strlen($lastUse[0]);
+        // Fallback: procurar por padrões comuns se não encontrou o grupo v1
+        else {
+            // 1. Antes do final de um grupo de middleware
+            if (preg_match_all('/Route::middleware\([^}]+\}\);/s', $contents, $middlewareMatches, PREG_OFFSET_CAPTURE)) {
+                $lastMiddleware = end($middlewareMatches[0]);
+                $insertPos = $lastMiddleware[1] + strlen($lastMiddleware[0]);
+            }
+            // 2. Após a última rota existente
+            elseif (preg_match_all('/Route::[^;]+;/', $contents, $routeMatches, PREG_OFFSET_CAPTURE)) {
+                $lastRoute = end($routeMatches[0]);
+                $insertPos = $lastRoute[1] + strlen($lastRoute[0]);
+            }
+            // 3. Após o último use statement se não houver rotas
+            elseif (preg_match_all('/^use .+;$/m', $contents, $useMatches, PREG_OFFSET_CAPTURE)) {
+                $lastUse = end($useMatches[0]);
+                $insertPos = $lastUse[1] + strlen($lastUse[0]);
+            }
         }
 
         // Preparar a formatação da nova rota
@@ -313,8 +331,9 @@ class ModuleAll extends Command
             $suffix = "\n";
         }
 
-        // Adicionar comentário explicativo e a rota
-        $routeBlock = $prefix . "\n// Rota para " . $model . "\n" . $routeLine . $suffix;
+        // Adicionar comentário explicativo e a rota com indentação adequada
+        $indent = "    "; // 4 espaços para estar dentro do grupo v1
+        $routeBlock = $prefix . "\n" . $indent . "// Rota para " . $model . "\n" . $indent . $routeLine . $suffix;
 
         // Inserir a nova rota na posição encontrada
         $newContents = $beforeInsert . $routeBlock . $afterInsert;
