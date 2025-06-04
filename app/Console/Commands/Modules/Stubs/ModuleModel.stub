@@ -4,14 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 class {modelName} extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     /**
      * A tabela associada ao modelo.
@@ -26,14 +25,10 @@ class {modelName} extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'title',
         'description',
         'status',
-        'price',
-        'files',
-        'category_id',
         'user_id',
-        // Adicione outros campos conforme necessário
     ];
 
     /**
@@ -42,24 +37,9 @@ class {modelName} extends Model
      * @var array<int, string>
      */
     protected $hidden = [
-        'deleted_at',
-        'user_id', // Oculta relacionamentos sensíveis
-        // Adicione outros campos sensíveis
+        'user_id',
     ];
 
-    /**
-     * Os atributos que devem ser convertidos.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'price' => 'decimal:2',
-        'is_active' => 'boolean',
-        'published_at' => 'datetime',
-        'settings' => 'array',
-        'files' => 'array', // Alternativa ao json_decode/encode manual
-        // Adicione outros campos com casting
-    ];
 
     /**
      * Os atributos que devem ser tratados como datas.
@@ -69,14 +49,7 @@ class {modelName} extends Model
     protected $dates = [
         'created_at',
         'updated_at',
-        'deleted_at',
-        'published_at'
-        // Adicione outros campos de data
     ];
-
-    /**
-     * Relacionamentos
-     */
 
     /**
      * Obtém o usuário que criou este {modelNameLowerCase}.
@@ -84,29 +57,6 @@ class {modelName} extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    /**
-     * Acessor para obter URLs de arquivos.
-     */
-    protected function filesUrls(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (empty($this->files)) {
-                    return [];
-                }
-
-                $files = is_array($this->files) ? $this->files : json_decode($this->files, true);
-
-                return collect($files)->map(function ($path) {
-                    return [
-                        'path' => $path,
-                        'url' => Storage::url($path)
-                    ];
-                })->all();
-            }
-        );
     }
 
     /**
@@ -123,14 +73,5 @@ class {modelName} extends Model
             }
         });
 
-        // Limpar arquivos quando o modelo for excluído
-        static::deleting(function ($model) {
-            if (!empty($model->files)) {
-                $files = is_array($model->files) ? $model->files : json_decode($model->files, true);
-                foreach ($files as $file) {
-                    Storage::delete($file);
-                }
-            }
-        });
     }
 }

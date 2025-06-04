@@ -6,19 +6,25 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\{modelName}\{Store{modelName}Request, Update{modelName}Request};
 use App\Http\Resources\{modelName}\{{modelName}Collection, {modelName}Resource};
 use App\Models\{modelName};
-
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\{JsonResponse, Request, Response};
+use Illuminate\Http\{JsonResponse, Request};
 use Illuminate\Support\Facades\{Auth, DB, Log};
+use Illuminate\Validation\ValidationException;
 
 /**
  * @group {modelNamePluralLowerCase}
  *
  * APIs for managing {modelNamePluralLowerCase}.
  */
-
 class DummyClass extends Controller
 {
+    // Constants for configuration
+    private const DEFAULT_PER_PAGE = 15;
+    private const MAX_PER_PAGE = 100;
+    private const VALID_SORT_COLUMNS = ['created_at', 'updated_at', 'id'];
+    private const VALID_SORT_ORDERS = ['asc', 'desc'];
+    private const DEFAULT_SORT_BY = 'created_at';
+    private const DEFAULT_SORT_ORDER = 'desc';
+
     /**
      * List {modelNamePluralLowerCase}
      *
@@ -55,23 +61,7 @@ class DummyClass extends Controller
      *     "from": 1,
      *     "last_page": 1,
      *     "last_page_url": "http://localhost/api/{modelNamePluralLowerCase}?page=1",
-     *     "links": [
-     *       {
-     *         "url": null,
-     *         "label": "&laquo; Previous",
-     *         "active": false
-     *       },
-     *       {
-     *         "url": "http://localhost/api/{modelNamePluralLowerCase}?page=1",
-     *         "label": "1",
-     *         "active": true
-     *       },
-     *       {
-     *         "url": null,
-     *         "label": "Next &raquo;",
-     *         "active": false
-     *       }
-     *     ],
+     *     "links": [...],
      *     "next_page_url": null,
      *     "path": "http://localhost/api/{modelNamePluralLowerCase}",
      *     "per_page": 15,
@@ -84,27 +74,12 @@ class DummyClass extends Controller
      *   }
      * }
      *
-     * @response 200 {
-     *   "status": "success",
-     *   "message": "No {modelNamePluralLowerCase} results found",
-     *   "data": [],
-     *   "meta": {
-     *     "version": "1.0.0"
-     *   }
-     * }
-     *
      * @response 422 {
      *   "status": "error",
      *   "message": "Invalid or missing data",
      *   "data": {
-     *     "per_page": [
-     *       "The per page must be an integer.",
-     *       "The per page must be at least 1.",
-     *       "The per page must not be greater than 100."
-     *     ],
-     *     "sort_order": [
-     *       "The selected sort order is invalid."
-     *     ]
+     *     "per_page": ["The per page must be an integer."],
+     *     "sort_order": ["The selected sort order is invalid."]
      *   },
      *   "meta": {
      *     "version": "1.0.0"
@@ -114,87 +89,37 @@ class DummyClass extends Controller
      * @response 500 {
      *   "status": "error",
      *   "message": "Failed to fetch {modelNamePluralLowerCase}",
-     *   "data": [
-     *     "Database connection error"
-     *   ],
+     *   "data": ["Database connection error"],
      *   "meta": {
      *     "version": "1.0.0"
      *   }
      * }
      */
-
     public function index(Request $request): JsonResponse
     {
         try {
-            // Validar parâmetros de paginação e ordenação
-            $validated = $request->validate([
-                'per_page' => 'nullable|integer|min:1|max:100',
-                'sort_by' => 'nullable|string',
-                'sort_order' => 'nullable|string|in:asc,desc',
-                'search' => 'nullable|string'
-            ]);
+            $validated = $this->validateIndexRequest($request);
 
-            // Configurar parâmetros de paginação
-            $perPage = $validated['per_page'] ?? 15;
+            $query = $this->buildQuery($request, $validated);
 
-            // Configurar parâmetros de ordenação
-            $validSortColumns = ['created_at', 'updated_at', 'id']; // Colunas permitidas
-            $sortBy = $validated['sort_by'] ?? 'created_at';
-            if (!in_array(strtolower($sortBy), $validSortColumns)) {
-                $sortBy = 'created_at';
-            }
+            ${modelNamePluralLowerCase} = $query->orderBy(
+                $validated['sort_by'] ?? self::DEFAULT_SORT_BY,
+                $validated['sort_order'] ?? self::DEFAULT_SORT_ORDER
+            )->paginate($validated['per_page'] ?? self::DEFAULT_PER_PAGE);
 
-            $sortOrder = $validated['sort_order'] ?? 'desc';
+            return $this->handleIndexResponse(${modelNamePluralLowerCase});
 
-            $query = {modelName}::query();
-
-            // Aplicar filtros, se disponíveis
-            if ($request->has('search')) {
-                $searchTerm = $request->input('search');
-                $query->where(function ($q) use ($searchTerm) {
-                    $q->where('title', 'like', '%'. $searchTerm. '%');
-                });
-            }
-
-            // Buscar {modelNamePluralLowerCase} com paginação e ordenação
-            ${modelNamePluralLowerCase} = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
-
-            // Se não houver resultados
-            if (${modelNamePluralLowerCase}->isEmpty()) {
-                return $this->success([], __('No {modelNamePluralLowerCase} results found'), 200);
-            }
-
-            // Retornar usando o padrão success() com {modelName}Collection
-            return $this->success(
-                new {modelName}Collection(${modelNamePluralLowerCase}),
-                __('{modelName} retrieved successfully'),
-                200
-            );
-
+        } catch (ValidationException $e) {
+            return $this->handleValidationError($e, 'index');
         } catch (\Exception $e) {
-            Log::error('Erro ao buscar {modelNameLowerCase} no {modelName}Controller::index', [
-                'controller' => '{modelName}Controller',
-                'method' => 'index',
-                'user_id' => Auth::id() ?? 'guest',
-                'error_message' => $e->getMessage(),
-                'error_line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return $this->error([$e->getMessage()], __('Failed to fetch {modelNamePluralLowerCase}'), 500);
+            return $this->handleGeneralError($e, 'index', 'Failed to fetch {modelNamePluralLowerCase}');
         }
     }
 
     /**
      * Create {modelNameLowerCase}
      *
-     * Create a new {modelNameLowerCase} record in the database with optional file uploads.
-     *
-     * **File Upload Process:**
-     * - Files are uploaded to the '{modelNamePluralLowerCase}' directory in public storage
-     * - Multiple files can be uploaded simultaneously
-     * - File paths are stored as JSON in the database
-     * - Supported file types depend on server configuration
+     * Create a new {modelNameLowerCase} record in the database.
      *
      * **Transaction Management:**
      * - All operations are wrapped in a database transaction
@@ -202,7 +127,6 @@ class DummyClass extends Controller
      *
      * @bodyParam title string required The title of the {modelNameLowerCase} (3-255 characters). Example: Example Title
      * @bodyParam description string optional Description of the {modelNameLowerCase} (max 1000 characters). Example: This is an example description
-     * @bodyParam files file[] optional Array of files to upload. Maximum file size and allowed types depend on server configuration.
      *
      * @response 201 {
      *   "status": "success",
@@ -211,10 +135,6 @@ class DummyClass extends Controller
      *     "id": 1,
      *     "title": "Example Title",
      *     "description": "This is an example description",
-     *     "files": [
-     *       "/storage/{modelNamePluralLowerCase}/file1.jpg",
-     *       "/storage/{modelNamePluralLowerCase}/file2.pdf"
-     *     ],
      *     "created_at": "2024-01-01T00:00:00.000000Z",
      *     "updated_at": "2024-01-01T00:00:00.000000Z"
      *   },
@@ -227,24 +147,9 @@ class DummyClass extends Controller
      *   "status": "error",
      *   "message": "Invalid or missing data",
      *   "data": {
-     *     "title": [
-     *       "The title field is required."
-     *     ],
-     *     "description": [
-     *       "The description must not be greater than 1000 characters."
-     *     ]
+     *     "title": ["The title field is required."],
+     *     "description": ["The description must not be greater than 1000 characters."]
      *   },
-     *   "meta": {
-     *     "version": "1.0.0"
-     *   }
-     * }
-     *
-     * @response 422 {
-     *   "status": "error",
-     *   "message": "Failed to process uploaded files",
-     *   "data": [
-     *     "The uploaded file exceeds the maximum allowed size"
-     *   ],
      *   "meta": {
      *     "version": "1.0.0"
      *   }
@@ -253,52 +158,27 @@ class DummyClass extends Controller
      * @response 500 {
      *   "status": "error",
      *   "message": "Failed to create {modelNameLowerCase}",
-     *   "data": [
-     *     "Database connection error"
-     *   ],
+     *   "data": ["Database connection error"],
      *   "meta": {
      *     "version": "1.0.0"
      *   }
      * }
      */
-
     public function store(Store{modelName}Request $request): JsonResponse
     {
-        DB::beginTransaction();
+        return DB::transaction(function () use ($request) {
+            try {
+                ${modelNameLowerCase} = {modelName}::create($request->validated());
 
-        try {
-            $validatedData = $request->validated();
-
-            // Criar registro
-            ${modelNameLowerCase} = {modelName}::create($validatedData);
-
-            // Carregar relacionamentos, se necessário
-            // ${modelNameLowerCase}->load(['relationship1', 'relationship2']);
-
-            DB::commit();
-
-            // Resposta
-            return $this->success(
-                new {modelName}Resource(${modelNameLowerCase}),
-                __('{modelName} created successfully'),
-                201
-            );
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Erro ao criar {modelNameLowerCase} no {modelName}Controller::store', [
-                'controller' => '{modelName}Controller',
-                'method' => 'store',
-                'user_id' => Auth::id() ?? 'guest',
-                'model_id' => ${modelNameLowerCase}->id ?? 'unknown',
-                'error_message' => $e->getMessage(),
-                'error_file' => $e->getFile(),
-                'error_line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return $this->error([$e->getMessage()], __('Failed to create {modelNameLowerCase}'), 500);
-        }
+                return $this->success(
+                    new {modelName}Resource(${modelNameLowerCase}),
+                    __('{modelName} created successfully'),
+                    201
+                );
+            } catch (\Exception $e) {
+                return $this->handleGeneralError($e, 'store', 'Failed to create {modelNameLowerCase}');
+            }
+        });
     }
 
     /**
@@ -320,10 +200,6 @@ class DummyClass extends Controller
      *     "id": 1,
      *     "title": "Example Title",
      *     "description": "This is an example description",
-     *     "files": [
-     *       "/storage/{modelNamePluralLowerCase}/file1.jpg",
-     *       "/storage/{modelNamePluralLowerCase}/file2.pdf"
-     *     ],
      *     "created_at": "2024-01-01T00:00:00.000000Z",
      *     "updated_at": "2024-01-01T00:00:00.000000Z"
      *   },
@@ -344,9 +220,7 @@ class DummyClass extends Controller
      * @response 500 {
      *   "status": "error",
      *   "message": "Failed to fetch {modelNameLowerCase}",
-     *   "data": [
-     *     "Database connection error"
-     *   ],
+     *   "data": ["Database connection error"],
      *   "meta": {
      *     "version": "1.0.0"
      *   }
@@ -354,39 +228,20 @@ class DummyClass extends Controller
      */
     public function show({modelName} ${modelNameLowerCase}): JsonResponse
     {
-         try {
-
+        try {
             return $this->success(
                 new {modelName}Resource(${modelNameLowerCase}),
-                __('{modelName} retrieved successfully'),
-                200
+                __('{modelName} retrieved successfully')
             );
-
         } catch (\Exception $e) {
-            Log::error('Erro ao retornar {modelNameLowerCase} no {modelName}Controller::show', [
-                'controller' => '{modelName}Controller',
-                'method' => 'show',
-                'user_id' => Auth::id() ?? 'guest',
-                'model_id' => ${modelNameLowerCase}->id ?? 'unknown',
-                'error_message' => $e->getMessage(),
-                'error_file' => $e->getFile(),
-                'error_line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return $this->error([$e->getMessage()], __('Failed to fetch {modelNameLowerCase}'), 500);
+            return $this->handleGeneralError($e, 'show', 'Failed to fetch {modelNameLowerCase}', ${modelNameLowerCase}->id);
         }
     }
 
     /**
      * Update {modelNameLowerCase}
      *
-     * Update a specific {modelNameLowerCase} with new data and file management.
-     *
-     * **File Management:**
-     * - Upload new files via 'files' field
-     * - Remove specific files via 'remove_files' array
-     * - Existing files are preserved unless explicitly removed
+     * Update a specific {modelNameLowerCase} with new data.
      *
      * **Route Model Binding:**
      * - Automatically resolves the model instance
@@ -396,8 +251,6 @@ class DummyClass extends Controller
      *
      * @bodyParam title string optional The title of the {modelNameLowerCase}. Example: Updated Title
      * @bodyParam description string optional The description of the {modelNameLowerCase}. Example: Updated description
-     * @bodyParam files file[] optional New files to upload. Max 10 files, 10MB each.
-     * @bodyParam remove_files string[] optional Array of file paths to remove. Example: ["/storage/{modelNamePluralLowerCase}/old-file.jpg"]
      *
      * @response 200 {
      *   "status": "success",
@@ -406,9 +259,6 @@ class DummyClass extends Controller
      *     "id": 1,
      *     "title": "Updated Title",
      *     "description": "Updated description",
-     *     "files": [
-     *       "/storage/{modelNamePluralLowerCase}/new-file.jpg"
-     *     ],
      *     "updated_at": "2024-01-01T12:00:00.000000Z"
      *   },
      *   "meta": {
@@ -430,9 +280,7 @@ class DummyClass extends Controller
      * @response 500 {
      *   "status": "error",
      *   "message": "Failed to update {modelNameLowerCase}",
-     *   "data": [
-     *     "Database error occurred"
-     *   ],
+     *   "data": ["Database error occurred"],
      *   "meta": {
      *     "version": "1.0.0"
      *   }
@@ -440,101 +288,184 @@ class DummyClass extends Controller
      */
     public function update(Update{modelName}Request $request, {modelName} ${modelNameLowerCase}): JsonResponse
     {
-        DB::beginTransaction();
+        return DB::transaction(function () use ($request, ${modelNameLowerCase}) {
+            try {
+                ${modelNameLowerCase}->update($request->validated());
+                ${modelNameLowerCase}->refresh();
 
-        try {
-            $validatedData = $request->validated();
-
-            // Atualizar registro
-            ${modelNameLowerCase}->update($validatedData);
-
-            // Recarregar o modelo com dados atualizados
-            ${modelNameLowerCase}->refresh();
-
-            DB::commit();
-
-            return $this->success(
-                new {modelName}Resource(${modelNameLowerCase}),
-                __('{modelName} updated successfully'),
-                200
-            );
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Erro ao atualizar {modelNameLowerCase} no {modelName}Controller::update', [
-                'controller' => '{modelName}Controller',
-                'method' => 'update',
-                'user_id' => Auth::id() ?? 'guest',
-                'model_id' => ${modelNameLowerCase}->id ?? 'unknown',
-                'request_data' => $request->except(['files', 'password', 'password_confirmation']),
-                'error_message' => $e->getMessage(),
-                'error_file' => $e->getFile(),
-                'error_line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return $this->error([$e->getMessage()], __('Failed to update {modelNameLowerCase}'), 500);
-        }
+                return $this->success(
+                    new {modelName}Resource(${modelNameLowerCase}),
+                    __('{modelName} updated successfully')
+                );
+            } catch (\Exception $e) {
+                return $this->handleGeneralError($e, 'update', 'Failed to update {modelNameLowerCase}', ${modelNameLowerCase}->id);
+            }
+        });
     }
 
     /**
-     * Remove o {modelNameLowerCase} especificado do banco de dados.
+     * Delete {modelNameLowerCase}
      *
-     * Este endpoint permite excluir um registro específico do banco de dados.
-     * Utiliza transações para garantir a integridade dos dados e remove
-     * arquivos físicos associados quando existirem.
+     * This endpoint allows deleting a specific record from the database.
+     * Uses transactions to ensure data integrity.
      *
-     * @group {modelName} Management
-     *
-     * @urlParam id integer required O ID do {modelNameLowerCase} a ser excluído. Example: 1
+     * @urlParam {modelNameLowerCase} integer required The {modelNameLowerCase} instance to delete. Example: 1
      *
      * @response 204 {
-     *   "message": "Registro excluído com sucesso"
+     *   "status": "success",
+     *   "message": "Record deleted successfully",
+     *   "data": null,
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
      * }
      *
      * @response 404 {
+     *   "status": "error",
      *   "message": "{modelName} not found",
-     *   "error": "No query results for model [{modelName}] 999"
+     *   "data": [],
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
      * }
      *
      * @response 500 {
+     *   "status": "error",
      *   "message": "Failed to delete {modelNameLowerCase}",
-     *   "error": "Database connection error"
+     *   "data": ["Database connection error"],
+     *   "meta": {
+     *     "version": "1.0.0"
+     *   }
      * }
-     *
-     * @param {modelName} ${modelNameLowerCase}
-     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy({modelName} ${modelNameLowerCase}): JsonResponse
     {
-        DB::beginTransaction();
+        return DB::transaction(function () use (${modelNameLowerCase}) {
+            try {
+                ${modelNameLowerCase}->delete();
+                return $this->success(null, __('Record deleted successfully'), 204);
+            } catch (\Exception $e) {
+                return $this->handleGeneralError($e, 'destroy', 'Failed to delete {modelNameLowerCase}', ${modelNameLowerCase}->id);
+            }
+        });
+    }
 
-        try {
+    // ===== PRIVATE HELPER METHODS =====
 
-            // Excluir registro
-            ${modelNameLowerCase}->delete();
+    /**
+     * Validate index request parameters
+     */
+    private function validateIndexRequest(Request $request): array
+    {
+        return $request->validate([
+            'per_page' => 'nullable|integer|min:1|max:' . self::MAX_PER_PAGE,
+            'sort_by' => 'nullable|string|in:' . implode(',', self::VALID_SORT_COLUMNS),
+            'sort_order' => 'nullable|string|in:' . implode(',', self::VALID_SORT_ORDERS),
+            'search' => 'nullable|string|max:255'
+        ]);
+    }
 
-            DB::commit();
+    /**
+     * Build query with filters
+     */
+    private function buildQuery(Request $request, array $validated): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = {modelName}::query();
 
-            return $this->success(null, __('Record deleted successfully'), 204);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error('Erro ao excluir {modelNameLowerCase}', [
-                'controller' => '{modelName}Controller',
-                'method' => 'destroy',
-                'user_id' => Auth::id(),
-                '{modelNameLowerCase}_id' => ${modelNameLowerCase}->id,
-                'error' => [
-                    'message' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'trace' => $e->getTraceAsString()
-                ]
-            ]);
-
-            return $this->error(__('Failed to delete {modelNameLowerCase}'), 500, $e->getMessage());
+        if (!empty($validated['search'])) {
+            $query->where('title', 'like', '%' . $validated['search'] . '%');
         }
+
+        return $query;
+    }
+
+    /**
+     * Handle index response
+     */
+    private function handleIndexResponse($results): JsonResponse
+    {
+        if ($results->isEmpty()) {
+            return $this->success([], __('No {modelNamePluralLowerCase} results found'));
+        }
+
+        return $this->success(
+            new {modelName}Collection($results),
+            __('{modelName} retrieved successfully')
+        );
+    }
+
+    /**
+     * Handle validation errors
+     */
+    private function handleValidationError(ValidationException $e, string $method): JsonResponse
+    {
+        $this->logValidationError($e, $method);
+        return $this->error($e->errors(), __('Invalid or missing data'), 422);
+    }
+
+    /**
+     * Handle general errors
+     */
+    private function handleGeneralError(\Exception $e, string $method, string $message, ?int $modelId = null): JsonResponse
+    {
+        $this->logError($e, $method, $modelId);
+        return $this->error([$e->getMessage()], __($message), 500);
+    }
+
+    /**
+     * Log validation errors
+     */
+    private function logValidationError(ValidationException $e, string $method): void
+    {
+        Log::warning("Validation error in {modelName}Controller::{$method}", [
+            'controller' => '{modelName}Controller',
+            'method' => $method,
+            'user_id' => Auth::id() ?? 'guest',
+            'validation_errors' => $e->errors(),
+            'timestamp' => now()
+        ]);
+    }
+
+    /**
+     * Log general errors
+     */
+    private function logError(\Exception $e, string $method, ?int $modelId = null): void
+    {
+        $context = [
+            'controller' => '{modelName}Controller',
+            'method' => $method,
+            'user_id' => Auth::id() ?? 'guest',
+            'error_message' => $e->getMessage(),
+            'error_file' => $e->getFile(),
+            'error_line' => $e->getLine(),
+            'timestamp' => now()
+        ];
+
+        if ($modelId) {
+            $context['model_id'] = $modelId;
+        }
+
+        Log::error("Error in {modelName}Controller::{$method}", $context);
+    }
+
+    /**
+     * Get validation rules for API documentation
+     */
+    public static function getValidationConstraints(): array
+    {
+        return [
+            'pagination' => [
+                'default_per_page' => self::DEFAULT_PER_PAGE,
+                'max_per_page' => self::MAX_PER_PAGE,
+            ],
+            'sorting' => [
+                'valid_columns' => self::VALID_SORT_COLUMNS,
+                'valid_orders' => self::VALID_SORT_ORDERS,
+                'defaults' => [
+                    'sort_by' => self::DEFAULT_SORT_BY,
+                    'sort_order' => self::DEFAULT_SORT_ORDER,
+                ]
+            ]
+        ];
     }
 }

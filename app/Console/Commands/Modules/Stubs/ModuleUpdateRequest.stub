@@ -20,7 +20,7 @@ class Update{modelName}Request extends FormRequest
         $model = $this->route('{modelNameLowerCase}');
 
         // Verificar através do Gate/Policy
-        return Gate::allows('update', $model);
+        return true; //Gate::allows('update', $model);
     }
 
     /**
@@ -30,7 +30,7 @@ class Update{modelName}Request extends FormRequest
      */
     public function rules()
     {
-        $modelId = $this->route('{modelNameLowerCase}')->id;
+        $modelId = $this->route('{modelNameLowerCase}')?->id;
 
         return [
             // Adicione suas regras aqui. Exemplos:
