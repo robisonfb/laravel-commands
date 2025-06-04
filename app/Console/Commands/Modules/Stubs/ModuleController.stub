@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\{Auth, DB, Log};
 use Illuminate\Validation\ValidationException;
 
 /**
- * @group {modelNamePluralLowerCase}
+ * @group {modelName}s
  *
  * APIs for managing {modelNamePluralLowerCase}.
  */
@@ -191,7 +191,7 @@ class DummyClass extends Controller
      * - Returns 404 automatically if the model is not found
      * - No manual validation needed for ID format
      *
-     * @urlParam {modelNameLowerCase} integer required The {modelNameLowerCase} instance to retrieve. Example: 1
+     * @urlParam id integer required The ID of the {modelNameLowerCase} to retrieve. Example: 1
      *
      * @response 200 {
      *   "status": "success",
@@ -247,7 +247,7 @@ class DummyClass extends Controller
      * - Automatically resolves the model instance
      * - Returns 404 if model not found
      *
-     * @urlParam {modelNameLowerCase} integer required The {modelNameLowerCase} instance to update. Example: 1
+     * @urlParam id integer required The ID of the {modelNameLowerCase} to update. Example: 1
      *
      * @bodyParam title string optional The title of the {modelNameLowerCase}. Example: Updated Title
      * @bodyParam description string optional The description of the {modelNameLowerCase}. Example: Updated description
@@ -304,12 +304,12 @@ class DummyClass extends Controller
     }
 
     /**
-     * Delete {modelNameLowerCase}
+     * Delete {modelNameLowerCase}.
      *
      * This endpoint allows deleting a specific record from the database.
      * Uses transactions to ensure data integrity.
      *
-     * @urlParam {modelNameLowerCase} integer required The {modelNameLowerCase} instance to delete. Example: 1
+     * @urlParam id integer required The ID of the {modelNameLowerCase} to delete. Example: 1
      *
      * @response 204 {
      *   "status": "success",
