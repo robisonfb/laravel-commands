@@ -2,6 +2,7 @@
 
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Access\AuthorizationException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\{Exceptions, Middleware};
 
@@ -24,7 +25,8 @@ return Application::configure(basePath: dirname(__DIR__))
                     'message' => 'Unauthorized access. Invalid or expired token.',
                     'data'    => [],
                     'meta'    => [
-                        'version' => '1.0.0',
+                        'version' => config('app.version', '1.0.0'),
+                        'timestamp' => now()->toISOString(),
                     ],
                 ], 401);
             }
@@ -32,28 +34,49 @@ return Application::configure(basePath: dirname(__DIR__))
             return null;
         });
 
-        // Novo: Tratamento para AuthorizationException
+        // Tratamento para AuthorizationException (captura antes da conversão)
         $exceptions->render(function (AuthorizationException $e, $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
                     'status'  => 'forbidden',
-                    'message' => $e->getMessage() ?: 'Esta ação não é autorizada.',
+                    'message' => $e->getMessage() ?: 'This action is not authorized.',
                     'data'    => [],
                     'error'   => [
                         'code' => 'UNAUTHORIZED_ACCESS',
-                        'type' => 'AuthorizationException',
-                        'timestamp' => now()->toISOString(),
                         'suggestions' => [
-                            'Verifique se você possui as permissões necessárias',
-                            'Entre em contato com o administrador se necessário'
+                            'Check if you have the required permissions',
                         ]
                     ],
                     'meta'    => [
-                        'version' => '1.0.0',
+                        'version' => config('app.version', '1.0.0'),
+                        'timestamp' => now()->toISOString(),
                     ],
                 ], 403);
             }
 
-            return null; // Comportamento padrão para requisições web
+            return null;
+        });
+
+        // Tratamento para AccessDeniedHttpException (fallback)
+        $exceptions->render(function (AccessDeniedHttpException $e, $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'status'  => 'forbidden',
+                    'message' => 'This action is not authorized.',
+                    'data'    => [],
+                    'error'   => [
+                        'code' => 'ACCESS_DENIED',
+                        'suggestions' => [
+                            'Check if you have the necessary permissions'
+                        ]
+                    ],
+                    'meta'    => [
+                        'version' => config('app.version', '1.0.0'),
+                        'timestamp' => now()->toISOString(),
+                    ],
+                ], 403);
+            }
+
+            return null;
         });
     })->create();

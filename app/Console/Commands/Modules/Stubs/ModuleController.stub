@@ -39,6 +39,8 @@ class DummyClass extends Controller
      * - Search is performed on the 'title' field using LIKE operator
      * - Search term is case-insensitive and supports partial matches
      *
+     * @authenticated
+     *
      * @queryParam per_page integer optional Number of items per page (1-100). Default: 15. Example: 20
      * @queryParam sort_by string optional Column to sort by (created_at, updated_at, id). Default: created_at. Example: updated_at
      * @queryParam sort_order string optional Sort direction (asc, desc). Default: desc. Example: asc
@@ -127,6 +129,8 @@ class DummyClass extends Controller
      * - All operations are wrapped in a database transaction
      * - If any step fails, all changes are rolled back
      *
+     * @authenticated
+     *
      * @bodyParam title string required The title of the {modelNameLowerCase} (3-255 characters). Example: Example Title
      * @bodyParam description string optional Description of the {modelNameLowerCase} (max 1000 characters). Example: This is an example description
      *
@@ -195,6 +199,8 @@ class DummyClass extends Controller
      * - Automatically resolves the model instance from the route parameter
      * - Returns 404 automatically if the model is not found
      *
+     * @authenticated
+     *
      * @urlParam id integer required The ID of the {modelNameLowerCase} to retrieve. Example: 1
      *
      * @response 200 {
@@ -252,6 +258,8 @@ class DummyClass extends Controller
      * **Route Model Binding:**
      * - Automatically resolves the model instance
      * - Returns 404 if model not found
+     *
+     * @authenticated
      *
      * @urlParam id integer required The ID of the {modelNameLowerCase} to update. Example: 1
      *
@@ -317,6 +325,8 @@ class DummyClass extends Controller
      *
      * This endpoint allows deleting a specific record from the database.
      * Uses transactions to ensure data integrity.
+     *
+     * @authenticated
      *
      * @urlParam id integer required The ID of the {modelNameLowerCase} to delete. Example: 1
      *
