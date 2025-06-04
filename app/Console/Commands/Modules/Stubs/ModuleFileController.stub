@@ -269,6 +269,28 @@ class DummyClass extends Controller
         try {
             $validatedData = $request->validated();
 
+            // Processar arquivos
+            if ($request->hasFile('files')) {
+                try {
+                    $imagePaths = store_files($request, 'files', '{modelNamePluralLowerCase}', 'public');
+                    $validatedData['files'] = json_encode($imagePaths);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    Log::error('Erro ao processar arquivos no {modelName}Controller::store', [
+                        'controller' => '{modelName}Controller',
+                        'method' => 'store',
+                        'user_id' => Auth::id() ?? 'guest',
+                        'request_data' => $request->except(['files', 'password']),
+                        'files_count' => $request->hasFile('files') ? count($request->file('files')) : 0,
+                        'error_message' => $e->getMessage(),
+                        'error_file' => $e->getFile(),
+                        'error_line' => $e->getLine(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    return $this->error([$e->getMessage()], __('Failed to process uploaded files'), 422);
+                }
+            }
+
             // Criar registro
             ${modelNameLowerCase} = {modelName}::create($validatedData);
 
@@ -445,6 +467,78 @@ class DummyClass extends Controller
         try {
             $validatedData = $request->validated();
 
+            // Processar arquivos novos
+            if ($request->hasFile('files')) {
+                try {
+                    $newFilePaths = store_files($request, 'files', '{modelNamePluralLowerCase}', 'public');
+
+                    // Mesclar com arquivos existentes
+                    $existingFiles = !empty(${modelNameLowerCase}->files)
+                        ? json_decode(${modelNameLowerCase}->files, true) ?: []
+                        : [];
+
+                    $allFiles = array_merge($existingFiles, $newFilePaths);
+                    $validatedData['files'] = json_encode($allFiles);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    Log::error('Erro ao processar arquivos no {modelName}Controller::update', [
+                        'controller' => '{modelName}Controller',
+                        'method' => 'update',
+                        'user_id' => Auth::id() ?? 'guest',
+                        'model_id' => ${modelNameLowerCase}->id,
+                        'files_count' => $request->file('files') ? count($request->file('files')) : 0,
+                        'error_message' => $e->getMessage(),
+                        'error_file' => $e->getFile(),
+                        'error_line' => $e->getLine(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+
+                    return $this->error([$e->getMessage()], __('Failed to process uploaded files'), 422);
+                }
+            }
+
+            // Remover arquivos específicos
+            if ($request->has('remove_files')) {
+                try {
+                    $filesToRemove = $request->input('remove_files');
+
+                    if (!is_array($filesToRemove)) {
+                        throw new \Exception('The remove_files field must be an array');
+                    }
+
+                    $existingFiles = !empty(${modelNameLowerCase}->files)
+                        ? (json_decode(${modelNameLowerCase}->files, true) ?: [])
+                        : [];
+
+                    if (!empty($existingFiles)) {
+                        $remainingFiles = array_diff($existingFiles, $filesToRemove);
+
+                        // Excluir arquivos físicos
+                        if (!empty($filesToRemove)) {
+                            delete_files($filesToRemove);
+                        }
+
+                        // Atualizar lista de arquivos
+                        $validatedData['files'] = json_encode(array_values($remainingFiles));
+                    }
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    Log::error('Erro ao remover arquivos no {modelName}Controller::update', [
+                        'controller' => '{modelName}Controller',
+                        'method' => 'update',
+                        'user_id' => Auth::id() ?? 'guest',
+                        'model_id' => ${modelNameLowerCase}->id,
+                        'files_to_remove' => $request->input('remove_files', []),
+                        'error_message' => $e->getMessage(),
+                        'error_file' => $e->getFile(),
+                        'error_line' => $e->getLine(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+
+                    return $this->error([$e->getMessage()], __('Failed to remove files'), 422);
+                }
+            }
+
             // Atualizar registro
             ${modelNameLowerCase}->update($validatedData);
 
@@ -510,6 +604,30 @@ class DummyClass extends Controller
         DB::beginTransaction();
 
         try {
+            // Excluir arquivos físicos se existirem
+            if (!empty(${modelNameLowerCase}->files)) {
+                try {
+                    $files = json_decode(${modelNameLowerCase}->files, true) ?: [];
+                    if (!empty($files)) {
+                        delete_files($files);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Erro ao excluir arquivos físicos', [
+                        'controller' => '{modelName}Controller',
+                        'method' => 'destroy',
+                        'user_id' => Auth::id(),
+                        '{modelNameLowerCase}_id' => ${modelNameLowerCase}->id,
+                        'files_to_delete' => $files,
+                        'error' => [
+                            'message' => $e->getMessage(),
+                            'file' => $e->getFile(),
+                            'line' => $e->getLine(),
+                            'trace' => $e->getTraceAsString()
+                        ]
+                    ]);
+                    // Continua a execução mesmo com erro nos arquivos
+                }
+            }
 
             // Excluir registro
             ${modelNameLowerCase}->delete();

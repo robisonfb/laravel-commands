@@ -76,6 +76,7 @@ class ModuleCollection extends GeneratorCommand
     protected function getStub()
     {
         $stubPath = app_path() . '/Console/Commands/Modules/Stubs/ModuleCollection.stub';
+        // $stubPath = app_path() . '/Console/Commands/Modules/Stubs/ModuleFileCollection.stub';
 
         // Verifica se o arquivo stub existe
         if (!file_exists($stubPath)) {
