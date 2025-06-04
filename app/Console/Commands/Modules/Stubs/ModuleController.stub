@@ -9,7 +9,7 @@ use App\Models\{modelName};
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\{JsonResponse, Request, Response};
-use Illuminate\Support\Facades\{DB, Log};
+use Illuminate\Support\Facades\{Auth, DB, Log};
 
 /**
  * @group {modelNamePluralLowerCase}
@@ -177,7 +177,7 @@ class DummyClass extends Controller
             Log::error('Erro ao buscar {modelNameLowerCase} no {modelName}Controller::index', [
                 'controller' => '{modelName}Controller',
                 'method' => 'index',
-                'user_id' => auth()->id() ?? 'guest',
+                'user_id' => Auth::id() ?? 'guest',
                 'error_message' => $e->getMessage(),
                 'error_line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
@@ -281,7 +281,7 @@ class DummyClass extends Controller
                     Log::error('Erro ao processar arquivos no {modelName}Controller::store', [
                         'controller' => '{modelName}Controller',
                         'method' => 'store',
-                        'user_id' => auth()->id() ?? 'guest',
+                        'user_id' => Auth::id() ?? 'guest',
                         'request_data' => $request->except(['files', 'password']),
                         'files_count' => $request->hasFile('files') ? count($request->file('files')) : 0,
                         'error_message' => $e->getMessage(),
@@ -313,7 +313,7 @@ class DummyClass extends Controller
             Log::error('Erro ao criar {modelNameLowerCase} no {modelName}Controller::store', [
                 'controller' => '{modelName}Controller',
                 'method' => 'store',
-                'user_id' => auth()->id() ?? 'guest',
+                'user_id' => Auth::id() ?? 'guest',
                 'model_id' => ${modelNameLowerCase}->id ?? 'unknown',
                 'error_message' => $e->getMessage(),
                 'error_file' => $e->getFile(),
@@ -390,7 +390,7 @@ class DummyClass extends Controller
             Log::error('Erro ao retornar {modelNameLowerCase} no {modelName}Controller::show', [
                 'controller' => '{modelName}Controller',
                 'method' => 'show',
-                'user_id' => auth()->id() ?? 'guest',
+                'user_id' => Auth::id() ?? 'guest',
                 'model_id' => ${modelNameLowerCase}->id ?? 'unknown',
                 'error_message' => $e->getMessage(),
                 'error_file' => $e->getFile(),
@@ -486,7 +486,7 @@ class DummyClass extends Controller
                     Log::error('Erro ao processar arquivos no {modelName}Controller::update', [
                         'controller' => '{modelName}Controller',
                         'method' => 'update',
-                        'user_id' => auth()->id() ?? 'guest',
+                        'user_id' => Auth::id() ?? 'guest',
                         'model_id' => ${modelNameLowerCase}->id,
                         'files_count' => $request->file('files') ? count($request->file('files')) : 0,
                         'error_message' => $e->getMessage(),
@@ -528,7 +528,7 @@ class DummyClass extends Controller
                     Log::error('Erro ao remover arquivos no {modelName}Controller::update', [
                         'controller' => '{modelName}Controller',
                         'method' => 'update',
-                        'user_id' => auth()->id() ?? 'guest',
+                        'user_id' => Auth::id() ?? 'guest',
                         'model_id' => ${modelNameLowerCase}->id,
                         'files_to_remove' => $request->input('remove_files', []),
                         'error_message' => $e->getMessage(),
@@ -560,7 +560,7 @@ class DummyClass extends Controller
             Log::error('Erro ao atualizar {modelNameLowerCase} no {modelName}Controller::update', [
                 'controller' => '{modelName}Controller',
                 'method' => 'update',
-                'user_id' => auth()->id() ?? 'guest',
+                'user_id' => Auth::id() ?? 'guest',
                 'model_id' => ${modelNameLowerCase}->id ?? 'unknown',
                 'request_data' => $request->except(['files', 'password', 'password_confirmation']),
                 'error_message' => $e->getMessage(),
@@ -617,7 +617,7 @@ class DummyClass extends Controller
                     Log::warning('Erro ao excluir arquivos físicos', [
                         'controller' => '{modelName}Controller',
                         'method' => 'destroy',
-                        'user_id' => auth()->id(),
+                        'user_id' => Auth::id(),
                         '{modelNameLowerCase}_id' => ${modelNameLowerCase}->id,
                         'files_to_delete' => $files,
                         'error' => [
@@ -644,7 +644,7 @@ class DummyClass extends Controller
             Log::error('Erro ao excluir {modelNameLowerCase}', [
                 'controller' => '{modelName}Controller',
                 'method' => 'destroy',
-                'user_id' => auth()->id(),
+                'user_id' => Auth::id(),
                 '{modelNameLowerCase}_id' => ${modelNameLowerCase}->id,
                 'error' => [
                     'message' => $e->getMessage(),
