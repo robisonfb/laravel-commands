@@ -125,3 +125,15 @@ O Horizon estará acessível em http://localhost/horizon.
 ### Logs
 Use o https://laradumps.dev/
 
+### Documentação da API
+
+Este projeto utiliza o [Scribe](https://github.com/knuckleswtf/scribe) para gerar automaticamente a documentação da API a partir do código Laravel.
+
+#### Gerando a Documentação
+
+Para atualizar a documentação da API, execute o comando:
+
+```bash
+sail artisan scribe:generate
+```
+
