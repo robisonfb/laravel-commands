@@ -63,4 +63,8 @@ Route::prefix('v1')->group(function () {
         Route::patch('update-password', [ProfileController::class, 'updatePassword']);
     });
 
+    Route::middleware(['auth:sanctum', 'throttle:6,1'])->group(function () {
+        // add your routes here
+    });
+
 });
