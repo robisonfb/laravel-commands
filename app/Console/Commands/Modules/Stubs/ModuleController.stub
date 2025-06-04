@@ -184,12 +184,11 @@ class DummyClass extends Controller
     /**
      * Show {modelNameLowerCase}
      *
-     * Retrieve a specific {modelNameLowerCase} by its ID using Route Model Binding.
+     * Retrieve a specific {modelNameLowerCase} by its ID.
      *
      * **Route Model Binding:**
      * - Automatically resolves the model instance from the route parameter
      * - Returns 404 automatically if the model is not found
-     * - No manual validation needed for ID format
      *
      * @urlParam id integer required The ID of the {modelNameLowerCase} to retrieve. Example: 1
      *
@@ -304,7 +303,7 @@ class DummyClass extends Controller
     }
 
     /**
-     * Delete {modelNameLowerCase}.
+     * Delete {modelNameLowerCase}
      *
      * This endpoint allows deleting a specific record from the database.
      * Uses transactions to ensure data integrity.
