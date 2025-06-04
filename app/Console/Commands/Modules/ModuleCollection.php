@@ -4,6 +4,7 @@ namespace App\Console\Commands\Modules;
 
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\File;
 
 class ModuleCollection extends GeneratorCommand
 {
@@ -38,6 +39,9 @@ class ModuleCollection extends GeneratorCommand
      */
     public function handle()
     {
+        // Cria o diretório do modelo antes de gerar o arquivo
+        $this->createModelDirectory();
+
         // Verifica se o arquivo já existe
         if ($this->alreadyExists($this->getNameInput())) {
             // Se a opção --force foi fornecida, sobrescreve o arquivo
@@ -91,7 +95,8 @@ class ModuleCollection extends GeneratorCommand
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\\Http\\Resources';
+        $modelName = $this->getModelName();
+        return $rootNamespace . '\\Http\\Resources\\' . $modelName;
     }
 
     /**
@@ -171,5 +176,38 @@ class ModuleCollection extends GeneratorCommand
         $stub = str_replace('{modelNameLowerCase}', Str::lower($modelName), $stub);
 
         return $this;
+    }
+
+    /**
+     * Cria o diretório específico do modelo dentro de app/Http/Resources/
+     *
+     * @return void
+     */
+    protected function createModelDirectory()
+    {
+        $modelName = $this->getModelName();
+        $resourcesPath = app_path('Http/Resources/' . $modelName);
+
+        if (!File::exists($resourcesPath)) {
+            File::makeDirectory($resourcesPath, 0755, true);
+            $this->info('Diretório criado: ' . $resourcesPath);
+        }
+    }
+
+    /**
+     * Extrai o nome limpo do modelo a partir do input
+     *
+     * @return string
+     */
+    protected function getModelName()
+    {
+        $name = trim($this->argument('name'));
+
+        // Remove o sufixo 'Collection' se estiver presente
+        if (Str::endsWith($name, 'Collection')) {
+            $name = Str::replaceLast('Collection', '', $name);
+        }
+
+        return $name;
     }
 }

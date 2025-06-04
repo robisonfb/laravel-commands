@@ -23,32 +23,6 @@ class {modelName}Collection extends ResourceCollection
     {
         return [
             'data' => $this->collection,
-            'links' => [
-                'self' => route('api.{modelNamePluralLowerCase}.index'),
-            ],
-        ];
-    }
-
-    /**
-     * Obtém dados adicionais que devem ser retornados com o array de recursos.
-     *
-     * @param  Request  $request
-     * @return array
-     */
-    public function with($request): array
-    {
-        return [
-            'meta' => [
-                'total_count' => $this->resource->total(),
-                'per_page' => $this->resource->perPage(),
-                'current_page' => $this->resource->currentPage(),
-                'last_page' => $this->resource->lastPage(),
-                'from' => $this->resource->firstItem(),
-                'to' => $this->resource->lastItem(),
-                'path' => $this->resource->path(),
-                'version' => '1.0',
-                'api_status' => 'stable',
-            ],
         ];
     }
 }

@@ -9,7 +9,7 @@ use Illuminate\Support\{Str};
 class ModuleAll extends Command
 {
     protected $signature = 'module:all
-                            {--m|model= : O nome do modelo.}
+                            {--m|model= : O nome do modelo
                             {--f|force : Sobrescrever arquivos existentes}
                             {--continue : Continuar mesmo se ocorrerem erros não críticos}
                             ';
@@ -148,28 +148,28 @@ class ModuleAll extends Command
         $this->line('');
 
         // Gerar coleção do Postman
-        $this->comment("Gerando coleção Postman para {$model}...");
+        // $this->comment("Gerando coleção Postman para {$model}...");
 
         // Chamar o comando module:postman
-        $postmanCommand = "module:postman {$model}";
+        // $postmanCommand = "module:postman {$model}";
 
-        if ($this->option('force')) {
-            $postmanCommand .= " --force";
-        }
+        // if ($this->option('force')) {
+        //     $postmanCommand .= " --force";
+        // }
 
-        $this->line("Executando: $postmanCommand");
-        $postmanResult = Artisan::call($postmanCommand);
+        // $this->line("Executando: $postmanCommand");
+        // $postmanResult = Artisan::call($postmanCommand);
 
         // Verificar resultado
-        if ($postmanResult === 0) {
-            $this->info("✅ Coleção Postman gerada com sucesso em postman/{$model}Collection.json!");
-        } elseif ($postmanResult === ModulePostman::ERROR_ALREADY_EXISTS) {
-            $this->warn("⚠️ Coleção Postman já existe e foi ignorada. Use --force para sobrescrever.");
-        } else {
-            $this->error("❌ Falha ao gerar coleção Postman");
-        }
+        // if ($postmanResult === 0) {
+        //     $this->info("✅ Coleção Postman gerada com sucesso em postman/{$model}Collection.json!");
+        // } elseif ($postmanResult === ModulePostman::ERROR_ALREADY_EXISTS) {
+        //     $this->warn("⚠️ Coleção Postman já existe e foi ignorada. Use --force para sobrescrever.");
+        // } else {
+        //     $this->error("❌ Falha ao gerar coleção Postman");
+        // }
 
-        $this->line('');
+        // $this->line('');
 
         // Checagem final
         if (!empty($failedComponents)) {
@@ -263,10 +263,9 @@ class ModuleAll extends Command
                 $contents = substr($contents, 0, $lastUsePos) . "\n" . $controllerImport . substr($contents, $lastUsePos);
             } else {
                 // Se não encontrou nenhum use, procura pelo final do namespace
-                $namespaceEndPos = strpos($contents, ";");
-
-                if ($namespaceEndPos !== false) {
-                    $contents = substr($contents, 0, $namespaceEndPos + 1) . "\n\n" . $controllerImport . substr($contents, $namespaceEndPos + 1);
+                if (preg_match('/^namespace\s+[^;]+;/m', $contents, $namespaceMatch, PREG_OFFSET_CAPTURE)) {
+                    $namespaceEndPos = $namespaceMatch[0][1] + strlen($namespaceMatch[0][0]);
+                    $contents = substr($contents, 0, $namespaceEndPos) . "\n\n" . $controllerImport . substr($contents, $namespaceEndPos);
                 } else {
                     // Se nem namespace tem, adiciona depois do <?php
                     $phpPos = strpos($contents, "<?php");
@@ -278,39 +277,51 @@ class ModuleAll extends Command
             }
         }
 
-        // Encontrar o final do arquivo para adicionar a rota
-        // Vamos procurar o último middleware()->name()->group() ou o último ponto e vírgula
-        $middlewareGroupEndPos = strrpos($contents, "});");
-        $lastSemicolon         = strrpos($contents, ";");
+        // Encontrar o melhor local para inserir a rota
+        $insertPos = strlen($contents);
 
-        // Determinar onde colocar a nova rota
-        $insertPos = $middlewareGroupEndPos !== false ? $middlewareGroupEndPos + 2 : $lastSemicolon + 1;
-
-        // Verificar se não estamos inserindo dentro de algum fechamento
-        // Conta abertura e fechamento de chaves até o ponto de inserção
-        $openCount  = substr_count(substr($contents, 0, $insertPos), "{");
-        $closeCount = substr_count(substr($contents, 0, $insertPos), "}");
-
-        // Se houver mais aberturas que fechamentos, estamos dentro de algum bloco
-        if ($openCount > $closeCount) {
-            // Neste caso, procure o final do arquivo
-            $insertPos = strlen($contents);
+        // Procurar por padrões comuns onde as rotas devem ser inseridas
+        // 1. Antes do final de um grupo de middleware
+        if (preg_match_all('/Route::middleware\([^}]+\}\);/s', $contents, $middlewareMatches, PREG_OFFSET_CAPTURE)) {
+            $lastMiddleware = end($middlewareMatches[0]);
+            $insertPos = $lastMiddleware[1] + strlen($lastMiddleware[0]);
+        }
+        // 2. Após a última rota existente
+        elseif (preg_match_all('/Route::[^;]+;/', $contents, $routeMatches, PREG_OFFSET_CAPTURE)) {
+            $lastRoute = end($routeMatches[0]);
+            $insertPos = $lastRoute[1] + strlen($lastRoute[0]);
+        }
+        // 3. Após o último use statement se não houver rotas
+        elseif (preg_match_all('/^use .+;$/m', $contents, $useMatches, PREG_OFFSET_CAPTURE)) {
+            $lastUse = end($useMatches[0]);
+            $insertPos = $lastUse[1] + strlen($lastUse[0]);
         }
 
-        // Adiciona um comentário explicativo e formatação adequada
-        if (substr($contents, $insertPos - 1, 1) !== "\n") {
-            $routeLine = "\n\n// Rota para " . $model . "\n" . $routeLine;
-        } else {
-            $routeLine = "\n// Rota para " . $model . "\n" . $routeLine;
+        // Preparar a formatação da nova rota
+        $beforeInsert = substr($contents, 0, $insertPos);
+        $afterInsert = substr($contents, $insertPos);
+
+        // Verificar se precisamos adicionar quebras de linha
+        $prefix = "";
+        $suffix = "";
+
+        if (!empty($beforeInsert) && !str_ends_with(trim($beforeInsert), "\n")) {
+            $prefix = "\n";
         }
+
+        if (!empty(trim($afterInsert))) {
+            $suffix = "\n";
+        }
+
+        // Adicionar comentário explicativo e a rota
+        $routeBlock = $prefix . "\n// Rota para " . $model . "\n" . $routeLine . $suffix;
 
         // Inserir a nova rota na posição encontrada
-        $newContents = substr($contents, 0, $insertPos) . $routeLine . substr($contents, $insertPos);
+        $newContents = $beforeInsert . $routeBlock . $afterInsert;
 
         // Salvar o arquivo
         try {
             File::put($apiRoutesPath, $newContents);
-
             return true;
         } catch (\Exception $e) {
             return "Erro ao salvar o arquivo: " . $e->getMessage();
