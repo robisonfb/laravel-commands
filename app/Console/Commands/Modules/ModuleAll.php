@@ -277,66 +277,78 @@ class ModuleAll extends Command
             }
         }
 
-        // Encontrar o melhor local para inserir a rota dentro do grupo Route::prefix('v1')
+        // Encontrar a posição correta para inserir a rota
         $insertPos = strlen($contents);
 
-        // Procurar pelo grupo Route::prefix('v1') e encontrar a última posição antes do fechamento
-        if (preg_match('/Route::prefix\([\'"]v1[\'"]\)->group\(function \(\) \{([\s\S]*?)\}\);/s', $contents, $v1GroupMatch, PREG_OFFSET_CAPTURE)) {
-            $groupContent = $v1GroupMatch[1][0];
-            $groupStartPos = $v1GroupMatch[1][1];
+        // Dividir o conteúdo em linhas para análise mais precisa
+        $lines = explode("\n", $contents);
+        $v1GroupStart = -1;
+        $v1GroupEnd = -1;
+        $braceLevel = 0;
+        $insideV1Group = false;
 
-            // Encontrar a última chave de fechamento antes do final do grupo
-            $lastClosingBrace = strrpos($groupContent, '}');
+        // Encontrar o início e fim do grupo Route::prefix('v1')
+        for ($i = 0; $i < count($lines); $i++) {
+            $line = trim($lines[$i]);
 
-            if ($lastClosingBrace !== false) {
-                // Inserir antes da última chave de fechamento do grupo interno
-                $insertPos = $groupStartPos + $lastClosingBrace;
-            } else {
-                // Se não encontrou chave de fechamento, inserir no final do conteúdo do grupo
-                $insertPos = $groupStartPos + strlen($groupContent);
+            // Detectar início do grupo v1
+            if (strpos($line, "Route::prefix('v1')->group(function ()") !== false) {
+                $v1GroupStart = $i;
+                $insideV1Group = true;
+                $braceLevel = 0;
+                continue;
             }
-        }
-        // Fallback: procurar por padrões comuns se não encontrou o grupo v1
-        else {
-            // 1. Antes do final de um grupo de middleware
-            if (preg_match_all('/Route::middleware\([^}]+\}\);/s', $contents, $middlewareMatches, PREG_OFFSET_CAPTURE)) {
-                $lastMiddleware = end($middlewareMatches[0]);
-                $insertPos = $lastMiddleware[1] + strlen($lastMiddleware[0]);
-            }
-            // 2. Após a última rota existente
-            elseif (preg_match_all('/Route::[^;]+;/', $contents, $routeMatches, PREG_OFFSET_CAPTURE)) {
-                $lastRoute = end($routeMatches[0]);
-                $insertPos = $lastRoute[1] + strlen($lastRoute[0]);
-            }
-            // 3. Após o último use statement se não houver rotas
-            elseif (preg_match_all('/^use .+;$/m', $contents, $useMatches, PREG_OFFSET_CAPTURE)) {
-                $lastUse = end($useMatches[0]);
-                $insertPos = $lastUse[1] + strlen($lastUse[0]);
+
+            if ($insideV1Group) {
+                // Contar chaves para encontrar o fechamento correto
+                $braceLevel += substr_count($line, '{');
+                $braceLevel -= substr_count($line, '}');
+
+                // Se chegamos ao nível 0 de chaves, encontramos o fim do grupo
+                if ($braceLevel < 0) {
+                    $v1GroupEnd = $i;
+                    break;
+                }
             }
         }
 
-        // Preparar a formatação da nova rota
-        $beforeInsert = substr($contents, 0, $insertPos);
-        $afterInsert = substr($contents, $insertPos);
+        // Se encontrou o grupo v1, inserir antes do fechamento
+        if ($v1GroupStart !== -1 && $v1GroupEnd !== -1) {
+            // Calcular a posição em caracteres até a linha de fechamento
+            $insertPos = 0;
+            for ($i = 0; $i < $v1GroupEnd; $i++) {
+                $insertPos += strlen($lines[$i]) + 1; // +1 para o \n
+            }
 
-        // Verificar se precisamos adicionar quebras de linha
-        $prefix = "";
-        $suffix = "";
+            // Preparar a formatação da nova rota
+            $beforeInsert = substr($contents, 0, $insertPos);
+            $afterInsert = substr($contents, $insertPos);
 
-        if (!empty($beforeInsert) && !str_ends_with(trim($beforeInsert), "\n")) {
-            $prefix = "\n";
+            // Adicionar comentário explicativo e a rota com indentação adequada
+            $indent = "    "; // 4 espaços para estar dentro do grupo v1
+            $routeBlock = "\n" . $indent . "// Rota para " . $model . "\n" . $indent . $routeLine . "\n";
+
+            // Inserir a nova rota na posição encontrada
+            $newContents = $beforeInsert . $routeBlock . $afterInsert;
+        } else {
+            // Fallback: usar a lógica anterior se não encontrar o grupo v1
+            $beforeInsert = substr($contents, 0, $insertPos);
+            $afterInsert = substr($contents, $insertPos);
+
+            $prefix = "";
+            $suffix = "";
+
+            if (!empty($beforeInsert) && !str_ends_with(trim($beforeInsert), "\n")) {
+                $prefix = "\n";
+            }
+
+            if (!empty(trim($afterInsert))) {
+                $suffix = "\n";
+            }
+
+            $routeBlock = $prefix . "\n// Rota para " . $model . "\n" . $routeLine . $suffix;
+            $newContents = $beforeInsert . $routeBlock . $afterInsert;
         }
-
-        if (!empty(trim($afterInsert))) {
-            $suffix = "\n";
-        }
-
-        // Adicionar comentário explicativo e a rota com indentação adequada
-        $indent = "    "; // 4 espaços para estar dentro do grupo v1
-        $routeBlock = $prefix . "\n" . $indent . "// Rota para " . $model . "\n" . $indent . $routeLine . $suffix;
-
-        // Inserir a nova rota na posição encontrada
-        $newContents = $beforeInsert . $routeBlock . $afterInsert;
 
         // Salvar o arquivo
         try {
