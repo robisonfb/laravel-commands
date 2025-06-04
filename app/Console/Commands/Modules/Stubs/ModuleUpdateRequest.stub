@@ -16,11 +16,15 @@ class Update{modelName}Request extends FormRequest
      */
     public function authorize()
     {
-        // Obtém o {modelNameLowerCase} sendo atualizado
-        $model = $this->route('{modelNameLowerCase}');
+        // Obtém o blog sendo atualizado
+        ${modelNameLowerCase} = $this->route('{modelNameLowerCase}');
 
-        // Verificar através do Gate/Policy
-        return true; //Gate::allows('update', $model);
+        // Verifica se o blog existe e se o usuário pode atualizá-lo
+        if (!${modelNameLowerCase}) {
+            return false;
+        }
+
+        return Gate::allows('update', ${modelNameLowerCase});
     }
 
     /**

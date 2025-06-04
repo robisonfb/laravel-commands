@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Models\{modelName};
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Auth\Access\Response;
 
 class {modelName}Policy
 {
@@ -19,7 +20,7 @@ class {modelName}Policy
     public function viewAny(?User $user)
     {
         // Todos podem ver a listagem
-        return true;
+        return Response::allow();
     }
 
     /**
@@ -32,7 +33,7 @@ class {modelName}Policy
     public function view(?User $user, {modelName} ${modelNameLowerCase})
     {
         // Todos podem ver detalhes de um {modelNameLowerCase}
-        return true;
+        return Response::allow();
     }
 
     /**
@@ -44,7 +45,11 @@ class {modelName}Policy
     public function create(User $user)
     {
         // Apenas usuários autenticados podem criar
-        return true;
+        if (!$user) {
+            return Response::deny('You need to be logged in to create a {modelNameLowerCase}.');
+        }
+
+        return Response::allow();
     }
 
     /**
@@ -57,7 +62,15 @@ class {modelName}Policy
     public function update(User $user, {modelName} ${modelNameLowerCase})
     {
         // Usuários só podem atualizar seus próprios {modelNamePluralLowerCase} ou se for admin
-        return $user->id === ${modelNameLowerCase}->user_id || $user->isAdmin();
+        if ($user->id === ${modelNameLowerCase}->user_id) {
+            return Response::allow();
+        }
+
+        if ($user->isAdmin()) {
+            return Response::allow();
+        }
+
+        return Response::deny('You can only edit your own {modelNamePluralLowerCase}.');
     }
 
     /**
@@ -70,7 +83,15 @@ class {modelName}Policy
     public function delete(User $user, {modelName} ${modelNameLowerCase})
     {
         // Usuários só podem excluir seus próprios {modelNamePluralLowerCase} ou se for admin
-        return $user->id === ${modelNameLowerCase}->user_id || $user->isAdmin();
+        if ($user->id === ${modelNameLowerCase}->user_id) {
+            return Response::allow();
+        }
+
+        if ($user->isAdmin()) {
+            return Response::allow();
+        }
+
+        return Response::deny('You can only delete your own {modelNamePluralLowerCase}.');
     }
 
     /**
@@ -83,7 +104,11 @@ class {modelName}Policy
     public function restore(User $user, {modelName} ${modelNameLowerCase})
     {
         // Apenas admins podem restaurar {modelNamePluralLowerCase} excluídos
-        return $user->isAdmin();
+        if ($user->isAdmin()) {
+            return Response::allow();
+        }
+
+        return Response::deny('Only administrators can restore deleted {modelNamePluralLowerCase}.');
     }
 
     /**
@@ -96,6 +121,10 @@ class {modelName}Policy
     public function forceDelete(User $user, {modelName} ${modelNameLowerCase})
     {
         // Apenas admins podem excluir permanentemente
-        return $user->isAdmin();
+        if ($user->isAdmin()) {
+            return Response::allow();
+        }
+
+        return Response::deny('Only administrators can permanently delete {modelNamePluralLowerCase}.');
     }
 }
