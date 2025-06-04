@@ -3,8 +3,8 @@
 namespace App\Console\Commands\Modules;
 
 use Illuminate\Console\GeneratorCommand;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class ModuleUpdateRequest extends GeneratorCommand
 {
@@ -96,6 +96,7 @@ class ModuleUpdateRequest extends GeneratorCommand
     protected function getDefaultNamespace($rootNamespace)
     {
         $modelName = $this->getModelName();
+
         return $rootNamespace . '\\Http\\Requests\\' . $modelName;
     }
 
@@ -237,7 +238,7 @@ class ModuleUpdateRequest extends GeneratorCommand
      */
     protected function createModelDirectory()
     {
-        $modelName = $this->getModelName();
+        $modelName    = $this->getModelName();
         $requestsPath = app_path('Http/Requests/' . $modelName);
 
         if (!File::exists($requestsPath)) {

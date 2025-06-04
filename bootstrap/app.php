@@ -1,9 +1,8 @@
 <?php
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\{Exceptions, Middleware};
-use App\Trait\HttpResponses;
-use Illuminate\Auth\AuthenticationException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,12 +18,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (AuthenticationException $e, $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
-                    'status' => 'unauthorized',
+                    'status'  => 'unauthorized',
                     'message' => 'Unauthorized access. Invalid or expired token.',
-                    'data' => [],
-                    'meta' => [
-                        'version' => '1.0.0'
-                    ]
+                    'data'    => [],
+                    'meta'    => [
+                        'version' => '1.0.0',
+                    ],
                 ], 401);
             }
 

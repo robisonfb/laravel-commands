@@ -1,6 +1,7 @@
 <?php
-namespace App\Http\Resources;
+namespace App\Http\Resources\{modelName};
 
+use App\Http\Resources\{modelName}Resource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Request;
 

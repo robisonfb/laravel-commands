@@ -3,8 +3,8 @@
 namespace App\Console\Commands\Modules;
 
 use Illuminate\Console\GeneratorCommand;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class ModuleStoreRequest extends GeneratorCommand
 {
@@ -97,6 +97,7 @@ class ModuleStoreRequest extends GeneratorCommand
         if (Str::startsWith($modelName, 'Store')) {
             $modelName = Str::replaceFirst('Store', '', $modelName);
         }
+
         if (Str::endsWith($modelName, 'Request')) {
             $modelName = Str::replaceLast('Request', '', $modelName);
         }
@@ -132,6 +133,7 @@ class ModuleStoreRequest extends GeneratorCommand
     protected function getDefaultNamespace($rootNamespace)
     {
         $modelName = $this->getModelName();
+
         return $rootNamespace . '\\Http\\Requests\\' . $modelName;
     }
 

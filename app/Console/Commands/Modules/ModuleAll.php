@@ -265,7 +265,7 @@ class ModuleAll extends Command
                 // Se não encontrou nenhum use, procura pelo final do namespace
                 if (preg_match('/^namespace\s+[^;]+;/m', $contents, $namespaceMatch, PREG_OFFSET_CAPTURE)) {
                     $namespaceEndPos = $namespaceMatch[0][1] + strlen($namespaceMatch[0][0]);
-                    $contents = substr($contents, 0, $namespaceEndPos) . "\n\n" . $controllerImport . substr($contents, $namespaceEndPos);
+                    $contents        = substr($contents, 0, $namespaceEndPos) . "\n\n" . $controllerImport . substr($contents, $namespaceEndPos);
                 } else {
                     // Se nem namespace tem, adiciona depois do <?php
                     $phpPos = strpos($contents, "<?php");
@@ -281,10 +281,10 @@ class ModuleAll extends Command
         $insertPos = strlen($contents);
 
         // Dividir o conteúdo em linhas para análise mais precisa
-        $lines = explode("\n", $contents);
-        $v1GroupStart = -1;
-        $v1GroupEnd = -1;
-        $braceLevel = 0;
+        $lines         = explode("\n", $contents);
+        $v1GroupStart  = -1;
+        $v1GroupEnd    = -1;
+        $braceLevel    = 0;
         $insideV1Group = false;
 
         // Encontrar o início e fim do grupo Route::prefix('v1')
@@ -293,9 +293,10 @@ class ModuleAll extends Command
 
             // Detectar início do grupo v1
             if (strpos($line, "Route::prefix('v1')->group(function ()") !== false) {
-                $v1GroupStart = $i;
+                $v1GroupStart  = $i;
                 $insideV1Group = true;
-                $braceLevel = 0;
+                $braceLevel    = 0;
+
                 continue;
             }
 
@@ -307,6 +308,7 @@ class ModuleAll extends Command
                 // Se chegamos ao nível 0 de chaves, encontramos o fim do grupo
                 if ($braceLevel < 0) {
                     $v1GroupEnd = $i;
+
                     break;
                 }
             }
@@ -316,16 +318,17 @@ class ModuleAll extends Command
         if ($v1GroupStart !== -1 && $v1GroupEnd !== -1) {
             // Calcular a posição em caracteres até a linha de fechamento
             $insertPos = 0;
+
             for ($i = 0; $i < $v1GroupEnd; $i++) {
                 $insertPos += strlen($lines[$i]) + 1; // +1 para o \n
             }
 
             // Preparar a formatação da nova rota
             $beforeInsert = substr($contents, 0, $insertPos);
-            $afterInsert = substr($contents, $insertPos);
+            $afterInsert  = substr($contents, $insertPos);
 
             // Adicionar comentário explicativo e a rota com indentação adequada
-            $indent = "    "; // 4 espaços para estar dentro do grupo v1
+            $indent     = "    "; // 4 espaços para estar dentro do grupo v1
             $routeBlock = "\n" . $indent . "// " . $model . " Routes (Guest only) \n" . $indent . $routeLine . "\n";
 
             // Inserir a nova rota na posição encontrada
@@ -333,7 +336,7 @@ class ModuleAll extends Command
         } else {
             // Fallback: usar a lógica anterior se não encontrar o grupo v1
             $beforeInsert = substr($contents, 0, $insertPos);
-            $afterInsert = substr($contents, $insertPos);
+            $afterInsert  = substr($contents, $insertPos);
 
             $prefix = "";
             $suffix = "";
@@ -346,13 +349,14 @@ class ModuleAll extends Command
                 $suffix = "\n";
             }
 
-            $routeBlock = $prefix . "\n// Rota para " . $model . "\n" . $routeLine . $suffix;
+            $routeBlock  = $prefix . "\n// Rota para " . $model . "\n" . $routeLine . $suffix;
             $newContents = $beforeInsert . $routeBlock . $afterInsert;
         }
 
         // Salvar o arquivo
         try {
             File::put($apiRoutesPath, $newContents);
+
             return true;
         } catch (\Exception $e) {
             return "Erro ao salvar o arquivo: " . $e->getMessage();

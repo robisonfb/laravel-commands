@@ -3,8 +3,8 @@
 namespace App\Console\Commands\Modules;
 
 use Illuminate\Console\GeneratorCommand;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class ModuleResource extends GeneratorCommand
 {
@@ -96,6 +96,7 @@ class ModuleResource extends GeneratorCommand
     protected function getDefaultNamespace($rootNamespace)
     {
         $modelName = $this->getModelName();
+
         return $rootNamespace . '\\Http\\Resources\\' . $modelName;
     }
 
@@ -185,7 +186,7 @@ class ModuleResource extends GeneratorCommand
      */
     protected function createModelDirectory()
     {
-        $modelName = $this->getModelName();
+        $modelName     = $this->getModelName();
         $resourcesPath = app_path('Http/Resources/' . $modelName);
 
         if (!File::exists($resourcesPath)) {

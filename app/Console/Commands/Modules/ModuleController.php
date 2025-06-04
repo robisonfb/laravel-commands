@@ -3,8 +3,8 @@
 namespace App\Console\Commands\Modules;
 
 use Illuminate\Console\GeneratorCommand;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class ModuleController extends GeneratorCommand
 {
@@ -129,6 +129,7 @@ class ModuleController extends GeneratorCommand
     protected function getDefaultNamespace($rootNamespace)
     {
         $modelName = $this->getModelName();
+
         return $rootNamespace . '\\Http\\Controllers\\' . $modelName;
     }
 

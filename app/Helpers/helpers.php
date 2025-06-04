@@ -297,6 +297,7 @@ if (!function_exists('format_date_localized')) {
         return $formattedDate;
     }
 }
+
 if (!function_exists('formatCurrency')) {
     /**
      * Formata um valor monetário com base nas configurações do ambiente.
