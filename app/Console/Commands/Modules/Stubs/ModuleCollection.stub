@@ -42,27 +42,4 @@ class {modelName}Collection extends ResourceCollection
             ],
         ];
     }
-
-    /**
-     * Customiza as informações de paginação.
-     *
-     * @param  Request  $request
-     * @param  array  $paginated
-     * @param  array  $default
-     * @return array
-     */
-    public function paginationInformation($request, $paginated, $default)
-    {
-        return [
-            'meta' => [
-                'current_page' => $default['meta']['current_page'],
-                'last_page' => $default['meta']['last_page'],
-                'per_page' => $default['meta']['per_page'],
-                'total' => $default['meta']['total'],
-                'from' => $default['meta']['from'],
-                'to' => $default['meta']['to'],
-            ],
-            'links' => $default['links'],
-        ];
-    }
 }
