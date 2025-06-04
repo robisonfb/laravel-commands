@@ -4,6 +4,7 @@ namespace App\Console\Commands\Modules;
 
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\File;
 
 class ModuleStoreRequest extends GeneratorCommand
 {
@@ -38,6 +39,9 @@ class ModuleStoreRequest extends GeneratorCommand
      */
     public function handle()
     {
+        // Cria a pasta da model se não existir
+        $this->createModelDirectory();
+
         // Verifica se o arquivo já existe
         if ($this->alreadyExists($this->getNameInput())) {
             // Se a opção --force foi fornecida, sobrescreve o arquivo
@@ -62,6 +66,42 @@ class ModuleStoreRequest extends GeneratorCommand
         }
 
         return $result;
+    }
+
+    /**
+     * Cria o diretório da model se não existir
+     *
+     * @return void
+     */
+    protected function createModelDirectory()
+    {
+        $modelName = $this->getModelName();
+        $directory = app_path('Http/Requests/' . $modelName);
+
+        if (!File::exists($directory)) {
+            File::makeDirectory($directory, 0755, true);
+            $this->info('Diretório criado: ' . $directory);
+        }
+    }
+
+    /**
+     * Obtém o nome da model limpo
+     *
+     * @return string
+     */
+    protected function getModelName()
+    {
+        $modelName = $this->getNameInput();
+
+        // Remove 'Store' do início e 'Request' do final se estiverem presentes
+        if (Str::startsWith($modelName, 'Store')) {
+            $modelName = Str::replaceFirst('Store', '', $modelName);
+        }
+        if (Str::endsWith($modelName, 'Request')) {
+            $modelName = Str::replaceLast('Request', '', $modelName);
+        }
+
+        return $modelName;
     }
 
     /**
@@ -91,7 +131,8 @@ class ModuleStoreRequest extends GeneratorCommand
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\\Http\\Requests';
+        $modelName = $this->getModelName();
+        return $rootNamespace . '\\Http\\Requests\\' . $modelName;
     }
 
     /**
@@ -102,7 +143,7 @@ class ModuleStoreRequest extends GeneratorCommand
      */
     protected function qualifyClass($name)
     {
-        $name = ltrim($name, '\\/');
+        $name = ltrim($name, '\\\/');
         $name = str_replace('/', '\\', $name);
 
         $rootNamespace = $this->rootNamespace();

@@ -16,14 +16,11 @@ class Store{modelName}Request extends FormRequest
      */
     public function authorize()
     {
-        // Opção 1: Verificar através do Gate/Policy
-        // return Gate::allows('create', {modelName}::class);
+        // Obtém o {modelNameLowerCase} sendo atualizado
+        $model = $this->route('{modelNameLowerCase}');
 
-        // Opção 2: Verificação simplificada
-        // return auth()->user()->can('create', {modelName}::class);
-
-        // Alternativa: Permitir todos os usuários autenticados
-        return true;
+        // Verificar através do Gate/Policy
+        return Gate::allows('update', $model);
     }
 
     /**
@@ -34,73 +31,14 @@ class Store{modelName}Request extends FormRequest
     public function rules()
     {
         return [
-            // Adicione suas regras aqui. Exemplos:
-            'name' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'status' => ['required', Rule::in(['ativo', 'inativo', 'pendente'])],
-
-            // Exemplo com validação unique
-            'email' => 'required|email|unique:users,email',
-
-            // Exemplo para relacionamentos
-            'category_id' => 'required|exists:categories,id',
-
-            // Exemplo para arrays
-            'tags' => 'array',
-            'tags.*' => 'exists:tags,id',
+            'status' => ['required', Rule::in(['active', 'inactive', 'pending'])],
 
             // Exemplo para arquivos
-            'files' => 'array',
-            'files.*' => 'file|mimes:jpeg,png,jpg,gif,pdf|max:5120',
+            // 'files' => 'array',
+            // 'files.*' => 'file|mimes:jpeg,png,jpg,gif,pdf|max:5120',
         ];
     }
 
-    /**
-     * Obtém atributos personalizados para erros do validador.
-     *
-     * @return array
-     */
-    public function attributes()
-    {
-        return [
-            'name' => __('messages.name'),
-            'description' => __('messages.description'),
-            'status' => __('messages.status'),
-            'category_id' => __('messages.category'),
-            'tags' => __('messages.tags'),
-            'files' => __('messages.files'),
-        ];
-    }
-
-    /**
-     * Obtém as mensagens de erro para as regras de validação definidas.
-     *
-     * @return array
-     */
-    public function messages()
-    {
-        return [
-            'name.required' => __('messages.name_required'),
-            'status.in' => __('messages.status_invalid_option'),
-            'category_id.exists' => __('messages.category_not_found'),
-            'files.*.mimes' => __('messages.file_invalid_type'),
-            'files.*.max' => __('messages.file_size_exceeded'),
-        ];
-    }
-
-    /**
-     * Prepara os dados para validação.
-     *
-     * @return void
-     */
-    protected function prepareForValidation()
-    {
-        // Exemplo de preparação de dados antes da validação
-        if ($this->has('name')) {
-            $this->merge([
-                'slug' => \Illuminate\Support\Str::slug($this->name),
-                'user_id' => auth()->id(), // Atribuir o usuário atual automaticamente
-            ]);
-        }
-    }
 }

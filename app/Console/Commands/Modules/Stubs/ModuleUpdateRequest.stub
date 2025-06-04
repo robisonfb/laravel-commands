@@ -19,14 +19,8 @@ class Update{modelName}Request extends FormRequest
         // Obtém o {modelNameLowerCase} sendo atualizado
         $model = $this->route('{modelNameLowerCase}');
 
-        // Opção 1: Verificar através do Gate/Policy
-        // return Gate::allows('update', $model);
-
-        // Opção 2: Verificação simplificada
-        // return auth()->user()->can('update', $model);
-
-        // Alternativa: Permitir todos os usuários autenticados
-        return true;
+        // Verificar através do Gate/Policy
+        return Gate::allows('update', $model);
     }
 
     /**
@@ -40,72 +34,17 @@ class Update{modelName}Request extends FormRequest
 
         return [
             // Adicione suas regras aqui. Exemplos:
-            'name' => 'sometimes|required|string|max:255',
+            'title' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
-            'status' => ['sometimes', 'required', Rule::in(['ativo', 'inativo', 'pendente'])],
+            'status' => ['sometimes', 'required', Rule::in(['active', 'inactive', 'pending'])],
 
             // Exemplo com validação unique, ignorando o registro atual
-            'email' => ['sometimes', 'required', 'email', Rule::unique('users', 'email')->ignore($modelId)],
-
-            // Exemplo para relacionamentos
-            'category_id' => 'sometimes|required|exists:categories,id',
-
-            // Exemplo para arrays
-            'tags' => 'sometimes|array',
-            'tags.*' => 'exists:tags,id',
+            // 'email' => ['sometimes', 'required', 'email', Rule::unique('users', 'email')->ignore($modelId)],
 
             // Exemplo para arquivos
-            'files' => 'sometimes|array',
-            'files.*' => 'file|mimes:jpeg,png,jpg,gif,pdf|max:5120',
+            // 'files' => 'sometimes|array',
+            // 'files.*' => 'file|mimes:jpeg,png,jpg,gif,pdf|max:5120',
         ];
     }
 
-    /**
-     * Obtém atributos personalizados para erros do validador.
-     *
-     * @return array
-     */
-    public function attributes()
-    {
-        return [
-            'name' => __('messages.name'),
-            'description' => __('messages.description'),
-            'status' => __('messages.status'),
-            'category_id' => __('messages.category'),
-            'tags' => __('messages.tags'),
-            'files' => __('messages.files'),
-        ];
-    }
-
-    /**
-     * Obtém as mensagens de erro para as regras de validação definidas.
-     *
-     * @return array
-     */
-    public function messages()
-    {
-        return [
-            'name.required' => __('messages.name_required'),
-            'status.in' => __('messages.status_invalid_option'),
-            'category_id.exists' => __('messages.category_not_found'),
-            'files.*.mimes' => __('messages.file_invalid_type'),
-            'files.*.max' => __('messages.file_size_exceeded'),
-        ];
-    }
-
-    /**
-     * Prepara os dados para validação.
-     *
-     * @return void
-     */
-    protected function prepareForValidation()
-    {
-        // Exemplo de preparação de dados antes da validação
-        if ($this->has('name')) {
-            $this->merge([
-                'slug' => \Illuminate\Support\Str::slug($this->name),
-                // Não atribuímos user_id na atualização para não sobrescrever o usuário original
-            ]);
-        }
-    }
 }

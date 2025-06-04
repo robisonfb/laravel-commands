@@ -4,6 +4,7 @@ namespace App\Console\Commands\Modules;
 
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\File;
 
 class ModuleUpdateRequest extends GeneratorCommand
 {
@@ -38,6 +39,9 @@ class ModuleUpdateRequest extends GeneratorCommand
      */
     public function handle()
     {
+        // Cria o diretório do modelo antes de gerar o arquivo
+        $this->createModelDirectory();
+
         // Verifica se o arquivo já existe
         if ($this->alreadyExists($this->getNameInput())) {
             // Se a opção --force foi fornecida, sobrescreve o arquivo
@@ -91,7 +95,8 @@ class ModuleUpdateRequest extends GeneratorCommand
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\\Http\\Requests';
+        $modelName = $this->getModelName();
+        return $rootNamespace . '\\Http\\Requests\\' . $modelName;
     }
 
     /**
@@ -223,5 +228,42 @@ class ModuleUpdateRequest extends GeneratorCommand
         $stub = str_replace('{modelNameLowerCase}', Str::lower($modelName), $stub);
 
         return $this;
+    }
+
+    /**
+     * Cria o diretório específico do modelo dentro de app/Http/Requests/
+     *
+     * @return void
+     */
+    protected function createModelDirectory()
+    {
+        $modelName = $this->getModelName();
+        $requestsPath = app_path('Http/Requests/' . $modelName);
+
+        if (!File::exists($requestsPath)) {
+            File::makeDirectory($requestsPath, 0755, true);
+            $this->info('Diretório criado: ' . $requestsPath);
+        }
+    }
+
+    /**
+     * Extrai o nome limpo do modelo a partir do input
+     *
+     * @return string
+     */
+    protected function getModelName()
+    {
+        $name = trim($this->argument('name'));
+
+        // Remove prefixos e sufixos para obter apenas o nome do modelo
+        if (Str::startsWith($name, 'Update')) {
+            $name = Str::replaceFirst('Update', '', $name);
+        }
+
+        if (Str::endsWith($name, 'Request')) {
+            $name = Str::replaceLast('Request', '', $name);
+        }
+
+        return $name;
     }
 }
